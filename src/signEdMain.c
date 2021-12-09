@@ -2,7 +2,18 @@
 #include <stdlib.h>
 #include "ed25519.h"
 
+void phex(unsigned char* str, int len)
+{
+    unsigned char i;
+    for (i = 0; i < len; ++i)
+        printf("%.2x", str[i]);
+    printf("\n");
+}
+
+
 unsigned char seed[32];
+unsigned char public_key[32];
+unsigned char private_key[64];
 
 int main(int argc, char* argv[])
 {
@@ -13,4 +24,8 @@ int main(int argc, char* argv[])
     printf("Could not create random seed.");
     exit( 1 );
   }
+  ed25519_create_keypair(public_key, private_key,
+                         seed);
+  printf("Generated public key: \n");
+  phex( public_key, 32 );
 }
