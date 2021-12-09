@@ -25,5 +25,5 @@ $(MAIN): $(OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
 clean:
-	$(RM) -r -f *.o *.d *~ $(MAIN)
+	$(RM) -r -f src/*.o src/*.d src/*~ $(MAIN)
 
