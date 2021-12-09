@@ -1,5 +1,10 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
 #include "ed25519.h"
 #include "b64.h"
 
@@ -40,4 +45,23 @@ int main(int argc, char* argv[])
   free( enc );
   phex( public_key, 64 );
 
+  char* home_dir=getenv("HOME");
+  char file_path[256];
+  sprintf( file_path, "%s/.signEd", home_dir);
+  printf( "Path to file: %s\n", file_path );
+
+  int file_handle = open (file_path, O_WRONLY | O_CREAT, 0600);
+  if(file_handle != -1)
+  {
+    printf("Created key file %s\n",file_path );
+    enc = b64_encode(public_key, 32);
+    write( file_handle, enc, strlen( enc ) );
+    free( enc );
+    close( file_handle );
+  }
+  else
+  {
+    printf("Could not create key file: %s, exiting.\n",file_path);
+    exit( 2 );
+  }
 }
