@@ -53,6 +53,13 @@ int main(int argc, char* argv[])
   if( access( file_path, F_OK ) == 0 ) 
   {
     printf("File found, loading keys.\n");
+    char public_key_base64[45];
+    char private_key_base64[89];
+    FILE* file_handle = fopen (file_path, "r");
+    fscanf( file_handle, "%s\n%s", public_key_base64, private_key_base64 );
+    printf("Scanned public key: %s \nScanned private key: %s\n",
+      public_key_base64, private_key_base64);
+    fclose( file_handle );
   } 
   else 
   {
@@ -69,6 +76,10 @@ int main(int argc, char* argv[])
       enc = b64_encode(public_key, 32);
       fprintf( file_handle, "%s\n", enc );
       free( enc );
+      enc = b64_encode(private_key, 64);
+      fprintf( file_handle, "%s\n", enc );
+      free( enc );
+
       fclose( file_handle );
     }
     else
