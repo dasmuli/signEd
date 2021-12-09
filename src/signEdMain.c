@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ed25519.h"
+#include "b64.h"
 
 void phex(unsigned char* str, int len)
 {
@@ -26,6 +27,17 @@ int main(int argc, char* argv[])
   }
   ed25519_create_keypair(public_key, private_key,
                          seed);
+
   printf("Generated public key: \n");
+  char *enc = b64_encode(public_key, 32);
+  printf("%s\n",enc);
+  free( enc );
   phex( public_key, 32 );
+
+  printf("Generated private key: \n");
+  enc = b64_encode(public_key, 64);
+  printf("%s\n",enc);
+  free( enc );
+  phex( public_key, 64 );
+
 }
