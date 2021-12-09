@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
   phex( public_key, 32 );
 
   printf("Generated private key: \n");
-  enc = b64_encode(public_key, 64);
+  enc = b64_encode(private_key, 64);
   printf("%s\n",enc);
   free( enc );
   phex( public_key, 64 );
@@ -57,9 +57,27 @@ int main(int argc, char* argv[])
     char private_key_base64[89];
     FILE* file_handle = fopen (file_path, "r");
     fscanf( file_handle, "%s\n%s", public_key_base64, private_key_base64 );
-    printf("Scanned public key: %s \nScanned private key: %s\n",
+    printf("Loaded public key: %s \nLoaded private key: %s\n",
       public_key_base64, private_key_base64);
     fclose( file_handle );
+    unsigned char* dec = b64_decode(public_key_base64, 44);
+    memcpy( (void*)public_key, (void*) dec, 32 );
+    free( dec );
+    dec = b64_decode(private_key_base64, 88);
+    memcpy( (void*)private_key, (void*) dec, 64 );
+    free( dec );
+
+    printf("Reconverted public key: \n");
+    char *enc = b64_encode(public_key, 32);
+    printf("%s\n",enc);
+    free( enc );
+    phex( public_key, 32 );
+
+    printf("Reconverted private key: \n");
+    enc = b64_encode(private_key, 64);
+    printf("%s\n",enc);
+    free( enc );
+    phex( public_key, 64 );
   } 
   else 
   {
