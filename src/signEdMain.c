@@ -31,7 +31,7 @@ void print_mnemonic_part( uint64_t** pvalue,
 {
   int index = **pvalue % mnemonic_length;
   printf("%s ", mnemonic[ index ] );
-  *pvalue += 8;
+  *pvalue += 1;
   *length -= 8;
 }
 
