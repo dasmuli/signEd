@@ -50,18 +50,31 @@ int main(int argc, char* argv[])
   sprintf( file_path, "%s/.signEd", home_dir);
   printf( "Path to file: %s\n", file_path );
 
-  int file_handle = open (file_path, O_WRONLY | O_CREAT, 0600);
-  if(file_handle != -1)
+  if( access( file_path, F_OK ) == 0 ) 
   {
-    printf("Created key file %s\n",file_path );
-    enc = b64_encode(public_key, 32);
-    write( file_handle, enc, strlen( enc ) );
-    free( enc );
-    close( file_handle );
-  }
-  else
+    printf("File found, loading keys.\n");
+  } 
+  else 
   {
-    printf("Could not create key file: %s, exiting.\n",file_path);
-    exit( 2 );
+
+    FILE* file_handle = fopen (file_path, "w");
+    if(file_handle != NULL)
+    {
+      printf("Created key file %s\n",file_path );
+      if( 0 != chmod( file_path, 0600 ))
+      {
+        printf("Could not change permission for file: %s\n", file_path);
+        exit( 2 );
+      }
+      enc = b64_encode(public_key, 32);
+      fprintf( file_handle, "%s\n", enc );
+      free( enc );
+      fclose( file_handle );
+    }
+    else
+    {
+      printf("Could not create key file: %s, exiting.\n",file_path);
+      exit( 3 );
+    }
   }
 }
