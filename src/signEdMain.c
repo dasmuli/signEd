@@ -21,7 +21,7 @@
 
 
 #define OPTSTR "vs:o:f:ha"
-#define USAGE_FMT  "%s [-v] [-f hexflag] [-s inputfile] [-o outputfile] [-a username public_key] [-h] "
+#define USAGE_FMT  "%s [-v] [-f hexflag] [-s inputfile] [-o outputfile] [-a public_key name] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -33,7 +33,6 @@ extern char *optarg;
 extern int opterr, optind;
 
 int dumb_global_variable = -11;
-static FILE* fp;
 unsigned char buffer[BUFFER_SIZE]; // 1 MiB buffer
 
 void usage(char *progname, int opt);
@@ -198,8 +197,6 @@ int sign_file(options_t *options)
      errno = ENOENT;
      return EXIT_FAILURE;
    }
-   fp = options->input;
-
    
    /* Copied from sign.c because hash called iterativley
     * in order to not load the complete file into ram. */
@@ -215,12 +212,13 @@ int sign_file(options_t *options)
 
    sha512_init(&hash);
    sha512_update(&hash, private_key + 32, 32);
-   while( BUFFER_SIZE == (bytes_read=fread(buffer, BUFFER_SIZE, 1, fp)))
+   while( BUFFER_SIZE == (bytes_read=fread(buffer, 1, BUFFER_SIZE, options->input)))
    {
      sha512_update(&hash, buffer, BUFFER_SIZE);
+     if(options->verbose >= 4) printf("sha512 full update\n");
    }
    sha512_update(&hash, buffer, bytes_read);
-   /*fclose(fp); done twice... */
+   if(options->verbose >= 4) printf("sha512 remainging: %li\n",bytes_read);
    sha512_final(&hash, r);
 
    sc_reduce(r);
@@ -231,13 +229,14 @@ int sign_file(options_t *options)
    sha512_update(&hash, signature, 32);
    sha512_update(&hash, public_key, 32);
    /*sha512_update(&hash, message, message_len);*/
-   rewind( fp );
-   while( BUFFER_SIZE == (bytes_read=fread(buffer, BUFFER_SIZE, 1, fp)))
+   rewind(options->input);
+   while( BUFFER_SIZE == (bytes_read=fread(buffer, 1, BUFFER_SIZE, options->input)))
    {
      sha512_update(&hash, buffer, BUFFER_SIZE);
+     if(options->verbose >= 4) printf("sha512 full update\n");
    }
    sha512_update(&hash, buffer, bytes_read);
-   fclose(fp);
+   if(options->verbose >= 4) printf("sha512 remainging: %li\n",bytes_read);
 
    sha512_final(&hash, hram);
 
