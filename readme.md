@@ -1,5 +1,5 @@
-Ed25519
-=======
+signEd
+======
 
 This is a portable implementation of [Ed25519](http://ed25519.cr.yp.to/) based
 on the SUPERCOP "ref10" implementation. Additionally there is key exchanging
@@ -14,11 +14,13 @@ application requires key generation you must supply your own seeding function
 (which is simply a 256 bit (32 byte) cryptographic random number generator).
 
 
-Performance
------------
+Idea
+----
 
-On a Windows machine with an Intel Pentium B970 @ 2.3GHz I got the following
-speeds (running on only one a single core):
+-sign file
+-sign message
+-proof key holder
+-generate mutual key - explain steps
 
     Seed generation: 64us (15625 per second)
     Key generation: 88us (11364 per second)
@@ -26,10 +28,6 @@ speeds (running on only one a single core):
     Message verifying (short message): 228us (4386 per second)
     Scalar addition: 100us (10000 per second)
     Key exchange: 220us (4545 per second)
-
-The speeds on other machines may vary. Sign/verify times will be higher with
-longer messages. The implementation significantly benefits from 64 bit
-architectures, if possible compile as 64 bit.
 
 
 Usage

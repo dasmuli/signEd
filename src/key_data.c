@@ -50,6 +50,27 @@ void init_data()
   } 
   else 
   {
+    int result = ed25519_create_seed( seed );
+    if(result != 0)
+    {
+      printf("Could not create random seed.");
+      exit( 1 );
+    }
+    ed25519_create_keypair(public_key, private_key,
+                         seed);
+
+    printf("Generated public key: \n");
+    char *enc = b64_encode(public_key, 32);
+    printf("%s\n",enc);
+    free( enc );
+    //phex( public_key, 32 );
+
+    printf("Generated private key: \n");
+    enc = b64_encode(private_key, 64);
+    printf("%s\n",enc);
+    free( enc );
+    //phex( public_key, 64 );
+
 
     FILE* file_handle = fopen (file_path, "w");
     if(file_handle != NULL)
