@@ -75,11 +75,11 @@ void print_mnemonic( unsigned char* data, int length )
 
 int main(int argc, char* argv[])
 {
-  init_data();
-  printf("mnemonic for public key:\n");
-  print_mnemonic( public_key, 32 );
+    init_data();
+    printf("mnemonic for public key:\n");
+    print_mnemonic( public_key, 32 );
 
-  int opt;
+    int opt;
     options_t options = { 0, 0x0, stdin, stdout };
 
     opterr = 0;
