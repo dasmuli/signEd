@@ -10,6 +10,7 @@ extern "C" {
 extern unsigned char seed[32];
 extern unsigned char public_key[32];
 extern unsigned char private_key[64];
+extern unsigned char signature[64];
 
 void init_data();
 

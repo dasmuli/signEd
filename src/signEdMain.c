@@ -12,13 +12,20 @@
 #include "ed25519.h"
 #include "b64.h"
 #include "key_data.h"
+#include "ed25519.h"
+#include "sha512.h"
+#include "ge.h"
+#include "sc.h"
 
-#define OPTSTR "vi:o:f:h"
-#define USAGE_FMT  "%s [-v] [-f hexflag] [-i inputfile] [-o outputfile] [-h]"
+
+
+#define OPTSTR "vs:o:f:h"
+#define USAGE_FMT  "%s [-v] [-f hexflag] [-s inputfile] [-o outputfile] [-h]"
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
 #define DEFAULT_PROGNAME "george"
+#define BUFFER_SIZE (1 * 1024 * 1024)
 
 extern int errno;
 extern char *optarg;
@@ -32,9 +39,11 @@ typedef struct {
 } options_t;
 
 int dumb_global_variable = -11;
+static FILE* fp;
+unsigned char buffer[BUFFER_SIZE]; // 1 MiB buffer
 
 void usage(char *progname, int opt);
-int  do_the_needful(options_t *options);
+int  sign_file(options_t *options);
 
 void phex(unsigned char* str, int len)
 {
@@ -86,7 +95,7 @@ int main(int argc, char* argv[])
 
     while ((opt = getopt(argc, argv, OPTSTR)) != EOF)
        switch(opt) {
-           case 'i':
+           case 's':
               if (!(options.input = fopen(optarg, "r")) ){
                  perror(ERR_FOPEN_INPUT);
                  exit(EXIT_FAILURE);
@@ -117,7 +126,8 @@ int main(int argc, char* argv[])
               break;
        }
 
-    if (do_the_needful(&options) != EXIT_SUCCESS) {
+    if (sign_file(&options) != EXIT_SUCCESS) 
+    {
        perror(ERR_DO_THE_NEEDFUL);
        exit(EXIT_FAILURE);
        /* NOTREACHED */
@@ -134,20 +144,70 @@ void usage(char *progname, int opt)
    /* NOTREACHED */
 }
 
-int do_the_needful(options_t *options) 
+int sign_file(options_t *options) 
 {
 
-   if (!options) {
+   if (!options) 
+   {
      errno = EINVAL;
      return EXIT_FAILURE;
    }
 
-   if (!options->input || !options->output) {
+   if (!options->input) /*|| !options->output) {*/
+   {
      errno = ENOENT;
      return EXIT_FAILURE;
    }
+   fp = options->input;
 
-   /* XXX do needful stuff */
+   
+   /* Copied from sign.c because hash called iterativley
+    * in order to not load the complete file into ram. */
+   printf("Signing file\n");
 
+   size_t bytes_read = 0;
+
+   sha512_context hash;
+   unsigned char hram[64];
+   unsigned char r[64];
+   ge_p3 R;
+
+
+   sha512_init(&hash);
+   sha512_update(&hash, private_key + 32, 32);
+   while( BUFFER_SIZE == (bytes_read=fread(buffer, BUFFER_SIZE, 1, fp)))
+   {
+     sha512_update(&hash, buffer, BUFFER_SIZE);
+   }
+   sha512_update(&hash, buffer, bytes_read);
+   /*fclose(fp); done twice... */
+   sha512_final(&hash, r);
+
+   sc_reduce(r);
+   ge_scalarmult_base(&R, r);
+   ge_p3_tobytes(signature, &R);
+
+   sha512_init(&hash);
+   sha512_update(&hash, signature, 32);
+   sha512_update(&hash, public_key, 32);
+   /*sha512_update(&hash, message, message_len);*/
+   rewind( fp );
+   while( BUFFER_SIZE == (bytes_read=fread(buffer, BUFFER_SIZE, 1, fp)))
+   {
+     sha512_update(&hash, buffer, BUFFER_SIZE);
+   }
+   sha512_update(&hash, buffer, bytes_read);
+   fclose(fp);
+
+   sha512_final(&hash, hram);
+
+   sc_reduce(hram);
+   sc_muladd(signature + 32, hram, private_key, r);
+    
+   char* enc = b64_encode(signature, 64);
+   printf("%s\n",enc);
+   free( enc );
+
+   printf("Done\n");
    return EXIT_SUCCESS;
 }

@@ -12,6 +12,7 @@
 unsigned char seed[32];
 unsigned char public_key[32];
 unsigned char private_key[64];
+unsigned char signature[64];
 
 void init_data()
 {
