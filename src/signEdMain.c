@@ -21,8 +21,8 @@
 
 
 
-#define OPTSTR "vs:o:f:ha"
-#define USAGE_FMT  "%s [-v] [-f hexflag] [-s inputfile] [-o outputfile] [-a public_key name] [-h] "
+#define OPTSTR "vsi:o:f:ha"
+#define USAGE_FMT  "%s [-v] [-s] [-f hexflag] [-i inputfile] [-o outputfile] [-a public_key name] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -88,18 +88,20 @@ int main(int argc, char* argv[])
 
     while ((opt = getopt(argc, argv, OPTSTR)) != EOF)
        switch(opt) {
-           case 's':
+           case 'i':
               if (!(options.input = fopen(optarg, "r")) ){
                  perror(ERR_FOPEN_INPUT);
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
               }
+	      options.input_filename = optarg;
+              break;
+	   case 's':
 	      if (command != '0'){
                  perror("Only one command allowed each time.");
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
               }
-	      options.input_filename = optarg;
 	      command = 's';
               break;
 	   case 'a':
