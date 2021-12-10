@@ -6,8 +6,22 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stdint.h>
+#include <limits.h>
 #include "ed25519.h"
 #include "b64.h"
+
+/* File format: each line is either:
+ *
+ * Personality name-of-personality
+ * public_key
+ * private_key
+ *
+ * or
+ *
+ * User name-of-user
+ * public_key
+ *
+ * */
 
 unsigned char seed[32];
 unsigned char public_key[32];
@@ -16,7 +30,6 @@ unsigned char signature[64];
 
 void init_data()
 {
-  char* enc;
   char* home_dir=getenv("HOME");
   char file_path[256];
   sprintf( file_path, "%s/.signEd", home_dir);
@@ -27,8 +40,15 @@ void init_data()
     printf("File found, loading keys.\n");
     char public_key_base64[45];
     char private_key_base64[89];
+    char name_of_entry[1024];
+    char type_of_entry[12];
+
     FILE* file_handle = fopen (file_path, "r");
-    fscanf( file_handle, "%s\n%s", public_key_base64, private_key_base64 );
+    fscanf( file_handle, "%s %s\n%s\n%s\n", 
+      type_of_entry,
+      name_of_entry,
+      public_key_base64, 
+      private_key_base64 );
     printf("Loaded public key: %s \nLoaded private key: %s\n",
       public_key_base64, private_key_base64);
     fclose( file_handle );
@@ -82,13 +102,20 @@ void init_data()
         printf("Could not change permission for file: %s\n", file_path);
         exit( 2 );
       }
+
+      fprintf( file_handle, "Personality " );
+      char hostname[HOST_NAME_MAX];
+      char username[LOGIN_NAME_MAX];
+      gethostname(hostname, HOST_NAME_MAX);
+      getlogin_r(username, LOGIN_NAME_MAX);
+      fprintf( file_handle, "%s@%s\n", username, hostname );
       enc = b64_encode(public_key, 32);
       fprintf( file_handle, "%s\n", enc );
       free( enc );
       enc = b64_encode(private_key, 64);
       fprintf( file_handle, "%s\n", enc );
       free( enc );
-
+ 
       fclose( file_handle );
     }
     else
