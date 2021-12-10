@@ -9,6 +9,8 @@ typedef struct {
   uint32_t      flags;
   FILE         *input;
   FILE         *output;
+  char         *input_filename;
+  char         *output_filename;
 } options_t;
 
 #ifdef __cplusplus

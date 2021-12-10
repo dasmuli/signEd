@@ -9,6 +9,7 @@
 #include <libgen.h>
 #include <errno.h>
 #include <getopt.h>
+#include <libgen.h>
 #include "ed25519.h"
 #include "b64.h"
 #include "key_data.h"
@@ -81,7 +82,7 @@ int main(int argc, char* argv[])
     char command = '0';
     int expected_strings = 0;
     int opt;
-    options_t options = { 0, 0x0, stdin, stdout };
+    options_t options = { 0, 0x0, stdin, stdout, 0x0, 0x0 };
 
     opterr = 0;
 
@@ -98,6 +99,7 @@ int main(int argc, char* argv[])
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
               }
+	      options.input_filename = optarg;
 	      command = 's';
               break;
 	   case 'a':
@@ -115,6 +117,7 @@ int main(int argc, char* argv[])
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
               }
+	      options.output_filename = optarg;
               break;
 
            case 'f':
@@ -243,7 +246,11 @@ int sign_file(options_t *options)
    sc_reduce(hram);
    sc_muladd(signature + 32, hram, private_key, r);
     
-   char* enc = b64_encode(signature, 64);
+   printf("Signature %s\n",basename(options->input_filename));
+   char* enc = b64_encode(public_key, 32);
+   printf("%s\n",enc);
+   free( enc );
+   enc = b64_encode(signature, 64);
    printf("%s\n",enc);
    free( enc );
 
