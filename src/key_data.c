@@ -31,12 +31,12 @@ unsigned char signature[64];
 char name_of_entry[1024];
 char type_of_entry[12];
 
+static char file_path[256];
 
 
 void init_data(options_t* opt)
 {
   char* home_dir=getenv("HOME");
-  char file_path[256];
   sprintf( file_path, "%s/.signEd", home_dir);
   if(opt->verbose >= 2) printf( "Path to file: %s\n", file_path );
 
@@ -117,4 +117,32 @@ void init_data(options_t* opt)
       exit( 3 );
     }
   }
+}
+
+int add_user(options_t* opt, char* public_key, char* username )
+{
+    if(opt->verbose >= 2) printf("Adding user %s, public key %s\n",
+		    username, public_key);
+    FILE* file_handle = fopen (file_path, "a");
+    if(file_handle != NULL)
+    {
+      if(opt->verbose >= 2) printf("Appending to key file %s\n",file_path );
+      if( 0 != chmod( file_path, 0600 ))
+      {
+        printf("Could not change permission for file: %s\n", file_path);
+        exit( 2 );
+      }
+
+      fprintf( file_handle, "User %s\n", username );
+      fprintf( file_handle, "%s\n", public_key );
+
+      fclose( file_handle );
+    }
+    else
+    {
+      return EXIT_FAILURE;
+    }
+      
+    if(opt->verbose >= 2) printf("Adding user finished\n" );
+   return EXIT_SUCCESS;
 }

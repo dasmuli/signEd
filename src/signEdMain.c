@@ -110,8 +110,6 @@ int main(int argc, char* argv[])
 	      command = 'a';
 	      expected_strings = 2;
               break;
-
-
            case 'o':
               if (!(options.output = fopen(optarg, "w")) ){
                  perror(ERR_FOPEN_OUTPUT);
@@ -144,7 +142,7 @@ int main(int argc, char* argv[])
     }
 
     init_data(&options);
-    if(options.verbose >= 2)
+    if(options.verbose >= 3)
     {
       printf("mnemonic for public key:\n");
       print_mnemonic( public_key, 32 );
@@ -166,6 +164,7 @@ int main(int argc, char* argv[])
         }
 	break;
       case 'a':
+	add_user(&options, argv[optind], argv[optind+1]);
 	break;
       case '0':  /* on no command, print the public key */
 	enc = b64_encode(public_key, 32);

@@ -18,6 +18,7 @@ extern char type_of_entry[12];
 
 
 void init_data(options_t* opt);
+void add_user(options_t* opt, const char* public_key, const char* username );
 
 #ifdef __cplusplus
 }
