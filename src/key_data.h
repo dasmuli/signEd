@@ -1,7 +1,9 @@
 
 
-#ifndef key_data_h
+#ifndef key_data_H
 #define key_data_H 1
+
+#include "signEdMain.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,8 +13,11 @@ extern unsigned char seed[32];
 extern unsigned char public_key[32];
 extern unsigned char private_key[64];
 extern unsigned char signature[64];
+extern char name_of_entry[1024];
+extern char type_of_entry[12];
 
-void init_data();
+
+void init_data(options_t* opt);
 
 #ifdef __cplusplus
 }

@@ -16,11 +16,12 @@
 #include "sha512.h"
 #include "ge.h"
 #include "sc.h"
+#include "signEdMain.h"
 
 
 
-#define OPTSTR "vs:o:f:h"
-#define USAGE_FMT  "%s [-v] [-f hexflag] [-s inputfile] [-o outputfile] [-h]"
+#define OPTSTR "vs:o:f:ha"
+#define USAGE_FMT  "%s [-v] [-f hexflag] [-s inputfile] [-o outputfile] [-a username public_key] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -30,13 +31,6 @@
 extern int errno;
 extern char *optarg;
 extern int opterr, optind;
-
-typedef struct {
-  int           verbose;
-  uint32_t      flags;
-  FILE         *input;
-  FILE         *output;
-} options_t;
 
 int dumb_global_variable = -11;
 static FILE* fp;
@@ -84,10 +78,9 @@ void print_mnemonic( unsigned char* data, int length )
 
 int main(int argc, char* argv[])
 {
-    init_data();
-    printf("mnemonic for public key:\n");
-    print_mnemonic( public_key, 32 );
-
+    char* enc;
+    char command = '0';
+    int expected_strings = 0;
     int opt;
     options_t options = { 0, 0x0, stdin, stdout };
 
@@ -101,7 +94,23 @@ int main(int argc, char* argv[])
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
               }
+	      if (command != '0'){
+                 perror("Only one command allowed each time.");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+              }
+	      command = 's';
               break;
+	   case 'a':
+              if (command != '0'){
+                 perror("Only one command allowed each time.");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+              }
+	      command = 'a';
+	      expected_strings = 2;
+              break;
+
 
            case 'o':
               if (!(options.output = fopen(optarg, "w")) ){
@@ -126,13 +135,45 @@ int main(int argc, char* argv[])
               break;
        }
 
-    if (sign_file(&options) != EXIT_SUCCESS) 
+    if(expected_strings != argc-optind)
     {
-       perror(ERR_DO_THE_NEEDFUL);
-       exit(EXIT_FAILURE);
-       /* NOTREACHED */
+      printf("Expected number of option strings at the end: %i, but was: %i\n",
+	expected_strings, argc-optind);
+      exit(EXIT_FAILURE);
+      /* NOTREACHED */
     }
 
+    init_data(&options);
+    if(options.verbose >= 2)
+    {
+      printf("mnemonic for public key:\n");
+      print_mnemonic( public_key, 32 );
+    }
+
+    /*for ( ; optind < argc; optind++) 
+    {
+      argv[optind]
+    }*/
+
+    switch(command)
+    {
+      case 's':
+	if (sign_file(&options) != EXIT_SUCCESS) 
+        {
+          perror(ERR_DO_THE_NEEDFUL);
+          exit(EXIT_FAILURE);
+          /* NOTREACHED */
+        }
+	break;
+      case 'a':
+	break;
+      case '0':  /* on no command, print the public key */
+	enc = b64_encode(public_key, 32);
+        printf("%s %s\n",enc, name_of_entry);
+        free( enc );
+	break;
+    }
+    
     return EXIT_SUCCESS;
 }
 
@@ -163,7 +204,7 @@ int sign_file(options_t *options)
    
    /* Copied from sign.c because hash called iterativley
     * in order to not load the complete file into ram. */
-   printf("Signing file\n");
+   if(options->verbose >= 2) printf("Signing file\n");
 
    size_t bytes_read = 0;
 
@@ -208,6 +249,6 @@ int sign_file(options_t *options)
    printf("%s\n",enc);
    free( enc );
 
-   printf("Done\n");
+   if(options->verbose >= 2) printf("Done\n");
    return EXIT_SUCCESS;
 }
