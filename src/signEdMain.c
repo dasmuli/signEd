@@ -169,6 +169,7 @@ int main(int argc, char* argv[])
 	add_user(&options, argv[optind], argv[optind+1]);
 	break;
       case '0':  /* on no command, print the public key */
+        if(options.verbose >= 1) printf("Your public key:\n");
 	enc = b64_encode(public_key, 32);
         printf("%s %s\n",enc, name_of_entry);
         free( enc );
