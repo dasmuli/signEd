@@ -22,7 +22,7 @@
 
 
 #define OPTSTR "vsi:o:f:hap"
-#define USAGE_FMT  "%s [-v] [-s] [-p] [-f hexflag] [-i inputfile] [-o outputfile] [-a public_key name] [-h] "
+#define USAGE_FMT  "%s [-v] [-s] [-p] [-i inputfile] [-o outputfile] [-f signature] [-a public_key name] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -108,6 +108,7 @@ int main(int argc, char* argv[])
               }
 	      command = 's';
               break;
+
 	   case 'p':
               if (command != '0'){
 		 errno = EINVAL;
@@ -128,6 +129,7 @@ int main(int argc, char* argv[])
 	      command = 'a';
 	      expected_strings = 2;
               break;
+
            case 'o':
               if (!(options.output = fopen(optarg, "w")) ){
 		 errno = ENOENT;
@@ -138,9 +140,19 @@ int main(int argc, char* argv[])
 	      options.output_filename = optarg;
               break;
 
-           case 'f':
+           case 'x':
               options.flags = (uint32_t )strtoul(optarg, NULL, 16);
               break;
+
+	   case 'f':
+              if (!(options.signature_input = fopen(optarg, "r")) ){
+		 errno = ENOENT;
+                 perror(ERR_FOPEN_INPUT);
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+              }
+              break;
+
 
            case 'v':
               options.verbose += 1;
