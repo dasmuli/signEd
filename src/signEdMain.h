@@ -3,9 +3,12 @@
 #ifndef signEdMain_H
 #define signEdMain_H 1
 
+#include <stdbool.h>
+
 /* A struct to collect parameters. */
 typedef struct {
   int           verbose;
+  bool		merge;
   uint32_t      flags;
   FILE         *input;
   FILE         *output;

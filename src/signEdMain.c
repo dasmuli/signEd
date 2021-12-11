@@ -21,8 +21,8 @@
 
 
 
-#define OPTSTR "vsi:o:f:hacx"
-#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signature] [-x] [-a public_key name] [-h] "
+#define OPTSTR "vsi:o:f:hacxm"
+#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signature] [-x] [-m] [-a public_key name] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     char command = '0';
     int expected_strings = 0;
     int opt;
-    options_t options = { 0, 0x0, stdin, stdout, stdin, 0x0, 0x0 };
+    options_t options = { 0, false, 0x0, stdin, stdout, stdin, 0x0, 0x0 };
 
     opterr = 0;
 
@@ -122,6 +122,10 @@ int main(int argc, char* argv[])
               }
 	      command = 'x';
               break;
+
+	   case 'm':
+	      options.merge = true;
+	      break;
 
 	   case 'c':
               if (command != '0'){
@@ -407,6 +411,15 @@ int sign_file(options_t *options)
    enc = b64_encode(signature, 64);
    fprintf(options->output,"%s\n",enc);
    free( enc );
+
+   rewind(options->input);
+
+   if(options->merge)
+   {
+      while (0 < (bytes_read = fread(buffer, 1, sizeof(buffer), 
+		options->input)))
+        fwrite(buffer, 1, bytes_read, options->output);
+   }
 
    if(options->verbose >= 2) printf("Done\n");
    return EXIT_SUCCESS;
