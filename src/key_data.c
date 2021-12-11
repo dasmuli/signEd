@@ -195,3 +195,45 @@ int search_for_public_key(char* signature_public_key)
    printf("Key not found");
    return EXIT_FAILURE;
 }
+
+void strip_extension(char *fname)
+{
+    char *end = fname + strlen(fname);
+
+    while (end > fname && *end != '.') {
+        --end;
+    }
+
+    if (end > fname) {
+        *end = '\0';
+    }
+}
+
+int remove_signature_from_file(options_t* options)
+{
+    char signed_filename[1024];
+    char signature_B64[1024];
+    char signature_public_key_B64[1024];
+
+    if(3 != fscanf( options->signature_input, "Signature %s\n%s\n%s\n",
+      signed_filename, signature_public_key_B64,
+      signature_B64 ))
+    {
+	printf("Signature format error.\n");
+        return EXIT_FAILURE;
+    }
+
+    char new_filename[1024];
+    strcpy(new_filename, options->input_filename);
+    strip_extension(new_filename);
+
+    /* Copy into new file. */
+    FILE* p_new_file = fopen( new_filename, "w" );
+    char buffer[1*1024*1024];
+    size_t bytes;
+    while (0 < (bytes = fread(buffer, 1, sizeof(buffer), options->input)))
+      fwrite(buffer, 1, bytes, p_new_file);
+    fclose( p_new_file );
+
+    return EXIT_SUCCESS;
+}

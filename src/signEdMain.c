@@ -21,8 +21,8 @@
 
 
 
-#define OPTSTR "vsi:o:f:hac"
-#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signature] [-a public_key name] [-h] "
+#define OPTSTR "vsi:o:f:hacx"
+#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signature] [-x] [-a public_key name] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -97,6 +97,10 @@ int main(int argc, char* argv[])
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
               }
+	      if(options.signature_input == stdin)
+	      {
+	        options.signature_input = options.input;
+	      }
 	      options.input_filename = optarg;
               break;
 	   case 's':
@@ -107,6 +111,16 @@ int main(int argc, char* argv[])
                  /* NOTREACHED */
               }
 	      command = 's';
+              break;
+
+           case 'x':
+	      if (command != '0'){
+		 errno = EINVAL;
+                 perror("Only one command allowed each time.");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+              }
+	      command = 'x';
               break;
 
 	   case 'c':
@@ -138,10 +152,6 @@ int main(int argc, char* argv[])
                  /* NOTREACHED */
               }
 	      options.output_filename = optarg;
-              break;
-
-           case 'x':
-              options.flags = (uint32_t )strtoul(optarg, NULL, 16);
               break;
 
 	   case 'f':
@@ -201,6 +211,16 @@ int main(int argc, char* argv[])
           exit(EXIT_FAILURE);
           /* NOTREACHED */
         }
+	break;
+
+      case 'x':
+	if (check_file_signature(&options) != EXIT_SUCCESS) 
+        {
+          exit(EXIT_FAILURE);
+          /* NOTREACHED */
+        }
+	rewind(options.input);
+	remove_signature_from_file(&options);
 	break;
 
       case 'a':
