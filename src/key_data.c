@@ -196,6 +196,53 @@ int search_for_public_key(char* signature_public_key)
    return EXIT_FAILURE;
 }
 
+int find_public_key_for_user(
+			    char* name_searched, 
+		            char* public_key_b64_result)
+{
+   char command[24];
+   char username[1024];
+   char public_key_b64[1024];
+   char private_key_b64[1024];
+
+   FILE* file_handle = fopen (file_path, "r");
+
+
+   while(2 == fscanf(file_handle, "%s %s\n", command, username ))
+   {
+     if(0 == strcmp("User",command))
+     {
+       if(1 != fscanf(file_handle, "%s\n", public_key_b64 ))
+       {
+         printf("Key file error");
+         return EXIT_FAILURE;
+       }
+     }
+     else if(0 == strcmp("Personality",command))
+     {
+       if( 2 !=fscanf(file_handle, "%s\n%s\n", public_key_b64, 
+	   private_key_b64 ))
+       {
+         printf("Key file error");
+         return EXIT_FAILURE;
+       }
+     }
+     else
+     {
+       printf("Key file error");
+       return EXIT_FAILURE;
+     }
+
+     if(0 == strcmp("User",command) &&
+	0 == strcmp(username,name_searched))
+     {
+       strcpy(public_key_b64_result,public_key_b64);
+       return EXIT_SUCCESS;
+     }
+   }
+   return EXIT_FAILURE;
+}
+
 void strip_extension(char *fname)
 {
     char *end = fname + strlen(fname);

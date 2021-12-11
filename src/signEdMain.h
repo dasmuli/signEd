@@ -15,6 +15,8 @@ typedef struct {
   FILE         *signature_input;
   char         *input_filename;
   char         *output_filename;
+  char         *selected_users[256];
+  int           num_selected_users;
 } options_t;
 
 #ifdef __cplusplus

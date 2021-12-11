@@ -21,8 +21,8 @@
 
 
 
-#define OPTSTR "vsi:o:f:hacxm"
-#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signature] [-x] [-m] [-a public_key name] [-h] "
+#define OPTSTR "vsi:o:f:hacxmzu:"
+#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -40,6 +40,7 @@ unsigned char buffer[BUFFER_SIZE]; // 1 MiB buffer
 void usage(char *progname, int opt);
 int  sign_file(options_t *options);
 int  check_file_signature(options_t *options);
+int show_shared_zecret(options_t *options);
 
 void phex(unsigned char* str, int len)
 {
@@ -84,7 +85,8 @@ int main(int argc, char* argv[])
     char command = '0';
     int expected_strings = 0;
     int opt;
-    options_t options = { 0, false, 0x0, stdin, stdout, stdin, 0x0, 0x0 };
+    options_t options = { 0, false, 0x0, stdin, stdout, stdin, 0x0, 0x0,
+        {}, 0 };
 
     opterr = 0;
 
@@ -113,6 +115,12 @@ int main(int argc, char* argv[])
 	      command = 's';
               break;
 
+	   case 'u':
+	      options.selected_users[options.num_selected_users]
+		      = optarg;
+	      options.num_selected_users++;
+	      break;
+
            case 'x':
 	      if (command != '0'){
 		 errno = EINVAL;
@@ -122,6 +130,17 @@ int main(int argc, char* argv[])
               }
 	      command = 'x';
               break;
+	   
+	   case 'z':
+	      if (command != '0'){
+		 errno = EINVAL;
+                 perror("Only one command allowed each time.");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+              }
+	      command = 'z';
+              break;
+
 
 	   case 'm':
 	      options.merge = true;
@@ -215,6 +234,10 @@ int main(int argc, char* argv[])
           exit(EXIT_FAILURE);
           /* NOTREACHED */
         }
+	break;
+
+      case 'z':
+	show_shared_zecret(&options);
 	break;
 
       case 'x':
@@ -422,5 +445,48 @@ int sign_file(options_t *options)
    }
 
    if(options->verbose >= 2) printf("Done\n");
+   return EXIT_SUCCESS;
+}
+
+int show_shared_zecret(options_t *options)
+{
+   if (!options) 
+   {
+     errno = EINVAL;
+     return EXIT_FAILURE;
+   }
+
+   if (options->num_selected_users <= 0) /*|| !options->output) {*/
+   {
+     printf("You need to selected at least one user with -u\n");
+     errno = EINVAL;
+     return EXIT_FAILURE;
+   }
+
+   unsigned char shared_secret[32];
+   char public_key_user_b64[45];
+   if(0 != find_public_key_for_user(
+			    options->selected_users[0], 
+		            public_key_user_b64))
+   {
+     printf("Could not find user %s",options->selected_users[0]);
+     errno = EINVAL;
+     return EXIT_FAILURE;
+
+   }
+
+   unsigned char* public_user_key = 
+	   b64_decode(public_key_user_b64, 44);
+
+   ed25519_key_exchange(shared_secret,
+                        public_user_key, 
+			private_key);
+
+   free( public_user_key );
+
+   char* enc = b64_encode(shared_secret, 32);
+   fprintf(options->output,"%s\n",enc);
+   free( enc );
+
    return EXIT_SUCCESS;
 }

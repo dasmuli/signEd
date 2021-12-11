@@ -21,6 +21,8 @@ void init_data(options_t* opt);
 int add_user(options_t* opt, const char* public_key, const char* username );
 int search_for_public_key(char* signature_public_key);
 int remove_signature_from_file(options_t* options);
+int find_public_key_for_user(char* username, 
+		             char* public_key_b64);
 
 #ifdef __cplusplus
 }
