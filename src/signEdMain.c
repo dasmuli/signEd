@@ -21,8 +21,8 @@
 
 
 
-#define OPTSTR "vsi:o:f:hap"
-#define USAGE_FMT  "%s [-v] [-s] [-p] [-i inputfile] [-o outputfile] [-f signature] [-a public_key name] [-h] "
+#define OPTSTR "vsi:o:f:hac"
+#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signature] [-a public_key name] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -39,7 +39,7 @@ unsigned char buffer[BUFFER_SIZE]; // 1 MiB buffer
 
 void usage(char *progname, int opt);
 int  sign_file(options_t *options);
-int prove_file(options_t *options);
+int  check_file_signature(options_t *options);
 
 void phex(unsigned char* str, int len)
 {
@@ -109,14 +109,14 @@ int main(int argc, char* argv[])
 	      command = 's';
               break;
 
-	   case 'p':
+	   case 'c':
               if (command != '0'){
 		 errno = EINVAL;
                  perror("Only one command allowed each time.");
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
               }
-	      command = 'p';
+	      command = 'c';
               break;
 
 	   case 'a':
@@ -194,8 +194,9 @@ int main(int argc, char* argv[])
           /* NOTREACHED */
         }
 	break;
-      case 'p':
-	if (prove_file(&options) != EXIT_SUCCESS) 
+
+      case 'c':
+	if (check_file_signature(&options) != EXIT_SUCCESS) 
         {
           exit(EXIT_FAILURE);
           /* NOTREACHED */
@@ -205,6 +206,7 @@ int main(int argc, char* argv[])
       case 'a':
 	add_user(&options, argv[optind], argv[optind+1]);
 	break;
+
       case '0':  /* on no command, print the public key */
         if(options.verbose >= 1) printf("Your public key:\n");
 	enc = b64_encode(public_key, 32);
@@ -224,7 +226,7 @@ void usage(char *progname, int opt)
    /* NOTREACHED */
 }
 
-int prove_file(options_t *options) 
+int check_file_signature(options_t *options) 
 {
 
    if (!options) 
