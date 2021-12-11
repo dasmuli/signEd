@@ -92,6 +92,7 @@ int main(int argc, char* argv[])
        switch(opt) {
            case 'i':
               if (!(options.input = fopen(optarg, "r")) ){
+		 errno = ENOENT;
                  perror(ERR_FOPEN_INPUT);
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
@@ -100,6 +101,7 @@ int main(int argc, char* argv[])
               break;
 	   case 's':
 	      if (command != '0'){
+		 errno = EINVAL;
                  perror("Only one command allowed each time.");
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
@@ -108,6 +110,7 @@ int main(int argc, char* argv[])
               break;
 	   case 'p':
               if (command != '0'){
+		 errno = EINVAL;
                  perror("Only one command allowed each time.");
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
@@ -117,6 +120,7 @@ int main(int argc, char* argv[])
 
 	   case 'a':
               if (command != '0'){
+		 errno = EINVAL;
                  perror("Only one command allowed each time.");
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
@@ -126,6 +130,7 @@ int main(int argc, char* argv[])
               break;
            case 'o':
               if (!(options.output = fopen(optarg, "w")) ){
+		 errno = ENOENT;
                  perror(ERR_FOPEN_OUTPUT);
                  exit(EXIT_FAILURE);
                  /* NOTREACHED */
@@ -173,7 +178,6 @@ int main(int argc, char* argv[])
       case 's':
 	if (sign_file(&options) != EXIT_SUCCESS) 
         {
-          perror(ERR_DO_THE_NEEDFUL);
           exit(EXIT_FAILURE);
           /* NOTREACHED */
         }
@@ -181,7 +185,6 @@ int main(int argc, char* argv[])
       case 'p':
 	if (prove_file(&options) != EXIT_SUCCESS) 
         {
-          perror(ERR_VERIFY);
           exit(EXIT_FAILURE);
           /* NOTREACHED */
         }
