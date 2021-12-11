@@ -192,7 +192,6 @@ int search_for_public_key(char* signature_public_key)
      }
    }
 
-   printf("Key not found");
    return EXIT_FAILURE;
 }
 
