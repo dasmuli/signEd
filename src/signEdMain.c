@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
       case '0':  /* on no command, print the public key */
         if(options.verbose >= 1) printf("Your public key:\n");
 	enc = b64_encode(public_key, 32);
-        printf("%s %s\n",enc, name_of_entry);
+        fprintf(options.output, "%s %s\n",enc, name_of_entry);
         free( enc );
 	break;
     }
@@ -379,12 +379,13 @@ int sign_file(options_t *options)
    sc_reduce(hram);
    sc_muladd(signature + 32, hram, private_key, r);
     
-   printf("Signature %s\n",basename(options->input_filename));
+   fprintf(options->output, 
+     "Signature %s\n",basename(options->input_filename));
    char* enc = b64_encode(public_key, 32);
-   printf("%s\n",enc);
+   fprintf(options->output, "%s\n",enc);
    free( enc );
    enc = b64_encode(signature, 64);
-   printf("%s\n",enc);
+   fprintf(options->output,"%s\n",enc);
    free( enc );
 
    if(options->verbose >= 2) printf("Done\n");
