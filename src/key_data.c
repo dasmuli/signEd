@@ -228,17 +228,10 @@ int remove_signature_from_file(options_t* options)
     strip_extension(new_filename);
 
     /* Copy into new file. */
-    FILE* p_new_file = fopen( new_filename, "w" );
-    if(p_new_file == NULL)
-    {
-      printf("Could not create new file to write: %s.\n", new_filename);
-      return EXIT_FAILURE;
-    }
     char buffer[1*1024*1024];
     size_t bytes;
     while (0 < (bytes = fread(buffer, 1, sizeof(buffer), options->input)))
-      fwrite(buffer, 1, bytes, p_new_file);
-    fclose( p_new_file );
+      fwrite(buffer, 1, bytes, options->output);
 
     return EXIT_SUCCESS;
 }
