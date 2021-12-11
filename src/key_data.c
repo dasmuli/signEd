@@ -112,7 +112,7 @@ int generate_personality(FILE* file_handle, char* name, options_t* opt)
 
     if(opt->verbose >= 1) printf("Generated public key: \n");
     char *enc = b64_encode(public_key, 32);
-    printf("%s\n",enc);
+    printf("%s %s\n",enc,opt->personality);
     free( enc );
 
     if(opt->verbose >= 2) printf("Generated private key: \n");
