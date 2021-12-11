@@ -265,6 +265,12 @@ int check_file_signature(options_t *options)
     }
 
     /* Search public key in own data. */
+    if(0 != search_for_public_key(signature_public_key_B64))
+    {
+        printf("Unknown public key\n");
+        return EXIT_FAILURE;
+
+    }
 
     /* Decode B64 into binary */
     unsigned char* dec = b64_decode(signature_B64, 88);
