@@ -201,12 +201,15 @@ int search_for_public_key(char* signature_public_key)
 
    return EXIT_FAILURE;
 }
-int search_key_entry(char* filter_command, char* filter_user,
+
+int search_key_entry(FILE* file_handle,
+		     char* filter_command, char* filter_user,
 		     char* filter_public_key, char* filter_private_key,
 		     char* out_command, char* out_user, 
 		     char* out_public_key, char* out_private_key)
 {
-   FILE* file_handle = fopen (file_path, "r");
+   if( NULL == file_handle)
+      file_handle = fopen (file_path, "r");
    while(2 == fscanf(file_handle, "%s %s\n", out_command, out_user ))
    {
      if(0 == strcmp("User",out_command))
@@ -322,7 +325,7 @@ int remove_signature_from_file(options_t* options)
     strcpy(new_filename, basename(options->input_filename));
     strip_extension(new_filename);
 
-    /* Copy into new file. */
+    /* Copy into output. */
     char buffer[1*1024*1024];
     size_t bytes;
     while (0 < (bytes = fread(buffer, 1, sizeof(buffer), options->input)))
@@ -339,7 +342,7 @@ int add_personality(options_t *options)
     char private_key_b64[1024];
 
     if(EXIT_SUCCESS == 
-       search_key_entry("Personality",options->personality,NULL, NULL,
+       search_key_entry(NULL, "Personality",options->personality,NULL, NULL,
 		     command, user, public_key_b64, private_key_b64))
     {
       printf("User already exists\n");
@@ -357,7 +360,7 @@ int select_personality(options_t *options)
     char private_key_b64[1024];
 
     if(EXIT_SUCCESS == 
-       search_key_entry("Personality",options->personality,NULL, NULL,
+       search_key_entry(NULL, "Personality",options->personality,NULL, NULL,
 		     command, user, public_key_b64, private_key_b64))
     {
       if(options->verbose >= 2) printf( "Found selected personality\n" );
@@ -368,6 +371,41 @@ int select_personality(options_t *options)
       memcpy( (void*)private_key, (void*) dec, 64 );
       free( dec );
       strcpy(name_of_entry,user);
+    }
+    return EXIT_SUCCESS;
+}
+int show_personality_list(options_t *options)
+{
+    char command[1024];
+    char user[1024];
+    char public_key_b64[1024];
+    char private_key_b64[1024];
+
+    FILE* file_handle = fopen (file_path, "r");
+    while(EXIT_SUCCESS == 
+       search_key_entry(file_handle, "Personality",NULL,NULL, NULL,
+		     command, user, public_key_b64, private_key_b64))
+    {
+      if(options->verbose >= 1) printf( "%s ", public_key_b64 );
+      printf("%s\n",user);
+    }
+    return EXIT_SUCCESS;
+}
+
+int show_user_list(options_t *options)
+{
+    char command[1024];
+    char user[1024];
+    char public_key_b64[1024];
+    char private_key_b64[1024];
+
+    FILE* file_handle = fopen (file_path, "r");
+    while(EXIT_SUCCESS == 
+       search_key_entry(file_handle, "User",NULL,NULL, NULL,
+		     command, user, public_key_b64, private_key_b64))
+    {
+      if(options->verbose >= 1) printf( "%s ", public_key_b64 );
+      printf("%s\n",user);
     }
     return EXIT_SUCCESS;
 }

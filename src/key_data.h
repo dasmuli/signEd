@@ -25,6 +25,8 @@ int find_public_key_for_user(char* username,
 		             char* public_key_b64);
 int add_personality(options_t *options);
 int select_personality(options_t *options);
+int show_personality_list(options_t *options);
+int show_user_list(options_t *options);
 #ifdef __cplusplus
 }
 #endif /* key_data_H */

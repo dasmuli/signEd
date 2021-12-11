@@ -21,8 +21,8 @@
 
 
 
-#define OPTSTR "vsi:o:f:hacxmzu:n:p:"
-#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-n personality] [-p personality] [-h] "
+#define OPTSTR "vsi:o:f:hacxmzu:n:p:wl"
+#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-n personality] [-p personality] [-l] [-w] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -163,6 +163,27 @@ int main(int argc, char* argv[])
 	      command = 'x';
               break;
 	   
+	   case 'w':
+	      if (command != '0'){
+		 errno = EINVAL;
+                 perror("Only one command allowed each time.");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+              }
+	      command = 'w';
+              break;
+
+	   case 'l':
+	      if (command != '0'){
+		 errno = EINVAL;
+                 perror("Only one command allowed each time.");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+              }
+	      command = 'l';
+              break;
+
+
 	   case 'z':
 	      if (command != '0'){
 		 errno = EINVAL;
@@ -260,6 +281,15 @@ int main(int argc, char* argv[])
           /* NOTREACHED */
         }
 	break;
+      
+      case 'w':
+	show_personality_list(&options);
+	break;
+
+      case 'l':
+	show_user_list(&options);
+	break;
+
 
       case 'c':
 	select_personality(&options);
