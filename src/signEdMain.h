@@ -9,6 +9,7 @@ typedef struct {
   uint32_t      flags;
   FILE         *input;
   FILE         *output;
+  FILE         *signature_input;
   char         *input_filename;
   char         *output_filename;
 } options_t;

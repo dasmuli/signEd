@@ -3,7 +3,7 @@
 #include "ge.h"
 #include "sc.h"
 
-static int consttime_equal(const unsigned char *x, const unsigned char *y) {
+int consttime_equal(const unsigned char *x, const unsigned char *y) {
     unsigned char r = 0;
 
     r = x[0] ^ y[0];
