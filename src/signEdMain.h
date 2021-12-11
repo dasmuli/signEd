@@ -17,6 +17,7 @@ typedef struct {
   char         *output_filename;
   char         *selected_users[256];
   int           num_selected_users;
+  char         *personality;
 } options_t;
 
 #ifdef __cplusplus

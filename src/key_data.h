@@ -23,7 +23,8 @@ int search_for_public_key(char* signature_public_key);
 int remove_signature_from_file(options_t* options);
 int find_public_key_for_user(char* username, 
 		             char* public_key_b64);
-
+int add_personality(options_t *options);
+int select_personality(options_t *options);
 #ifdef __cplusplus
 }
 #endif /* key_data_H */

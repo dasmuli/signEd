@@ -34,6 +34,7 @@ char type_of_entry[12];
 
 static char file_path[256];
 
+int generate_personality(FILE* file_handle, char* name, options_t* opt);
 
 void init_data(options_t* opt)
 {
@@ -69,28 +70,6 @@ void init_data(options_t* opt)
   } 
   else 
   {
-    int result = ed25519_create_seed( seed );
-    if(result != 0)
-    {
-      printf("Could not create random seed.");
-      exit( 1 );
-    }
-    ed25519_create_keypair(public_key, private_key,
-                         seed);
-
-    printf("Generated public key: \n");
-    char *enc = b64_encode(public_key, 32);
-    printf("%s\n",enc);
-    free( enc );
-    //phex( public_key, 32 );
-
-    if(opt->verbose >= 2) printf("Generated private key: \n");
-    enc = b64_encode(private_key, 64);
-    printf("%s\n",enc);
-    free( enc );
-    //phex( public_key, 64 );
-
-
     FILE* file_handle = fopen (file_path, "w");
     if(file_handle != NULL)
     {
@@ -100,28 +79,55 @@ void init_data(options_t* opt)
         printf("Could not change permission for file: %s\n", file_path);
         exit( 2 );
       }
-
-      fprintf( file_handle, "Personality " );
-      char hostname[HOST_NAME_MAX];
-      char username[LOGIN_NAME_MAX];
-      gethostname(hostname, HOST_NAME_MAX);
-      getlogin_r(username, LOGIN_NAME_MAX);
-      fprintf( file_handle, "%s@%s\n", username, hostname );
-      enc = b64_encode(public_key, 32);
-      fprintf( file_handle, "%s\n", enc );
-      free( enc );
-      enc = b64_encode(private_key, 64);
-      fprintf( file_handle, "%s\n", enc );
-      free( enc );
- 
-      fclose( file_handle );
     }
     else
     {
       printf("Could not create key file: %s, exiting.\n",file_path);
       exit( 3 );
     }
+
+    char hostname[HOST_NAME_MAX];
+    char username[LOGIN_NAME_MAX];
+    char userandhostname[LOGIN_NAME_MAX+HOST_NAME_MAX+1];
+    gethostname(hostname, HOST_NAME_MAX);
+    getlogin_r(username, LOGIN_NAME_MAX);
+    sprintf( userandhostname, "%s@%s\n", username, hostname );
+
+    generate_personality(file_handle,userandhostname, opt);
+    
+    fclose(file_handle);
   }
+}
+
+int generate_personality(FILE* file_handle, char* name, options_t* opt)
+{
+    int result = ed25519_create_seed( seed );
+    if(result != 0)
+    {
+      printf("Could not create random seed.");
+      exit( 1 );
+    }
+    ed25519_create_keypair(public_key, private_key,
+                         seed);
+
+    if(opt->verbose >= 1) printf("Generated public key: \n");
+    char *enc = b64_encode(public_key, 32);
+    printf("%s\n",enc);
+    free( enc );
+
+    if(opt->verbose >= 2) printf("Generated private key: \n");
+    enc = b64_encode(private_key, 64);
+    if(opt->verbose >= 2) printf("%s\n",enc);
+    free( enc );
+
+    fprintf( file_handle, "Personality %s\n", name );
+    enc = b64_encode(public_key, 32);
+    fprintf( file_handle, "%s\n", enc );
+    free( enc );
+    enc = b64_encode(private_key, 64);
+    fprintf( file_handle, "%s\n", enc );
+    free( enc );
+    return EXIT_SUCCESS;
 }
 
 int add_user(options_t* opt, char* public_key, char* username )
@@ -195,6 +201,48 @@ int search_for_public_key(char* signature_public_key)
 
    return EXIT_FAILURE;
 }
+int search_key_entry(char* filter_command, char* filter_user,
+		     char* filter_public_key, char* filter_private_key,
+		     char* out_command, char* out_user, 
+		     char* out_public_key, char* out_private_key)
+{
+   FILE* file_handle = fopen (file_path, "r");
+   while(2 == fscanf(file_handle, "%s %s\n", out_command, out_user ))
+   {
+     if(0 == strcmp("User",out_command))
+     {
+       if(1 != fscanf(file_handle, "%s\n", out_public_key ))
+       {
+         printf("Key file error");
+         return EXIT_FAILURE;
+       }
+     }
+     else if(0 == strcmp("Personality",out_command))
+     {
+       if( 2 !=fscanf(file_handle, "%s\n%s\n", out_public_key, 
+	   out_private_key ))
+       {
+         printf("Key file error");
+         return EXIT_FAILURE;
+       }
+     }
+     else
+     {
+       printf("Key file error");
+       return EXIT_FAILURE;
+     }
+
+     if((NULL == filter_command || 0 == strcmp(filter_command,out_command)) &&
+        (NULL == filter_user || 0 == strcmp(filter_user,out_user)) && 
+        (NULL == filter_public_key || 0 == strcmp(filter_public_key,out_public_key)) &&
+        (NULL == filter_private_key || 0 == strcmp(filter_private_key,out_private_key)) ) 
+     {
+       return EXIT_SUCCESS;
+     }
+   }
+   return EXIT_FAILURE;
+}
+
 
 int find_public_key_for_user(
 			    char* name_searched, 
@@ -282,3 +330,45 @@ int remove_signature_from_file(options_t* options)
 
     return EXIT_SUCCESS;
 }
+
+int add_personality(options_t *options)
+{
+    char command[1024];
+    char user[1024];
+    char public_key_b64[1024];
+    char private_key_b64[1024];
+
+    if(EXIT_SUCCESS == 
+       search_key_entry("Personality",options->personality,NULL, NULL,
+		     command, user, public_key_b64, private_key_b64))
+    {
+      printf("User already exists\n");
+      return EXIT_FAILURE;
+    }
+    FILE* file_handle = fopen (file_path, "a");
+    return generate_personality(file_handle, options->personality, options);
+}
+
+int select_personality(options_t *options)
+{
+    char command[1024];
+    char user[1024];
+    char public_key_b64[1024];
+    char private_key_b64[1024];
+
+    if(EXIT_SUCCESS == 
+       search_key_entry("Personality",options->personality,NULL, NULL,
+		     command, user, public_key_b64, private_key_b64))
+    {
+      if(options->verbose >= 2) printf( "Found selected personality\n" );
+      unsigned char* dec = b64_decode(public_key_b64, 44);
+      memcpy( (void*)public_key, (void*) dec, 32 );
+      free( dec );
+      dec = b64_decode(private_key_b64, 88);
+      memcpy( (void*)private_key, (void*) dec, 64 );
+      free( dec );
+      strcpy(name_of_entry,user);
+    }
+    return EXIT_SUCCESS;
+}
+

@@ -21,8 +21,8 @@
 
 
 
-#define OPTSTR "vsi:o:f:hacxmzu:"
-#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-h] "
+#define OPTSTR "vsi:o:f:hacxmzu:n:p:"
+#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-n personality] [-p personality] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
     int expected_strings = 0;
     int opt;
     options_t options = { 0, false, 0x0, stdin, stdout, stdin, 0x0, 0x0,
-        {}, 0 };
+        {}, 0, 0x0 };
 
     opterr = 0;
 
@@ -120,6 +120,38 @@ int main(int argc, char* argv[])
 		      = optarg;
 	      options.num_selected_users++;
 	      break;
+	   
+	   case 'n':
+	      if (command != '0'){
+		 errno = EINVAL;
+                 perror("Only one command allowed each time.");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+              }
+	      if(options.personality != NULL)
+	      {
+		 errno = EINVAL;
+                 perror("Personality can be given only once..");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+
+	      }
+	      options.personality = optarg;
+	      command = 'n';
+	      break;
+
+	   case 'p':
+	      if(options.personality != NULL)
+	      {
+		 errno = EINVAL;
+                 perror("Personality can be given only once..");
+                 exit(EXIT_FAILURE);
+                 /* NOTREACHED */
+	      }
+	      options.personality = optarg;
+
+	      break;
+
 
            case 'x':
 	      if (command != '0'){
@@ -221,6 +253,7 @@ int main(int argc, char* argv[])
     switch(command)
     {
       case 's':
+	select_personality(&options);
 	if (sign_file(&options) != EXIT_SUCCESS) 
         {
           exit(EXIT_FAILURE);
@@ -229,6 +262,7 @@ int main(int argc, char* argv[])
 	break;
 
       case 'c':
+	select_personality(&options);
 	if (check_file_signature(&options) != EXIT_SUCCESS) 
         {
           exit(EXIT_FAILURE);
@@ -237,7 +271,12 @@ int main(int argc, char* argv[])
 	break;
 
       case 'z':
+	select_personality(&options);
 	show_shared_zecret(&options);
+	break;
+
+      case 'n':
+	add_personality(&options);
 	break;
 
       case 'x':
@@ -255,6 +294,7 @@ int main(int argc, char* argv[])
 	break;
 
       case '0':  /* on no command, print the public key */
+	select_personality(&options);
         if(options.verbose >= 1) printf("Your public key:\n");
 	enc = b64_encode(public_key, 32);
         fprintf(options.output, "%s %s\n",enc, name_of_entry);
