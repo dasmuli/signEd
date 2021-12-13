@@ -29,6 +29,7 @@ unsigned char seed[32];
 unsigned char public_key[32];
 unsigned char private_key[64];
 unsigned char signature[64];
+unsigned char shared_secret[32];
 char name_of_entry[1024];
 char type_of_entry[12];
 

@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <libgen.h>
+#include <sys/random.h>
 #include "ed25519.h"
 #include "b64.h"
 #include "key_data.h"
@@ -17,12 +18,13 @@
 #include "sha512.h"
 #include "ge.h"
 #include "sc.h"
+#include "aes.h"
 #include "signEdMain.h"
 
 
 
-#define OPTSTR "vsi:o:f:hacxmzu:n:p:wl"
-#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-n personality] [-p personality] [-l] [-w] [-h] "
+#define OPTSTR "vsi:o:f:hacxmzu:n:p:wle"
+#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-n personality] [-p personality] [-l] [-w] [-e] [-h] "
 #define ERR_FOPEN_INPUT  "fopen(input, r)"
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
@@ -34,13 +36,14 @@ extern int errno;
 extern char *optarg;
 extern int opterr, optind;
 
-int dumb_global_variable = -11;
 unsigned char buffer[BUFFER_SIZE]; // 1 MiB buffer
+unsigned char aes_iv[AES_BLOCKLEN];
 
 void usage(char *progname, int opt);
-int  sign_file(options_t *options);
-int  check_file_signature(options_t *options);
+int sign_file(options_t *options);
+int check_file_signature(options_t *options);
 int show_shared_zecret(options_t *options);
+int calculate_shared_key(options_t* options);
 
 void phex(unsigned char* str, int len)
 {
@@ -86,7 +89,7 @@ int main(int argc, char* argv[])
     int expected_strings = 0;
     int opt;
     options_t options = { 0, false, 0x0, stdin, stdout, stdin, 0x0, 0x0,
-        {}, 0, 0x0 };
+        {}, 0, 0x0, 0 };
 
     opterr = 0;
 
@@ -239,10 +242,13 @@ int main(int argc, char* argv[])
               }
               break;
 
-
            case 'v':
               options.verbose += 1;
               break;
+
+	   case 'e':
+	      options.use_aes_encryption = 1;
+	      break;
 
            case 'h':
            default:
@@ -436,6 +442,23 @@ int check_file_signature(options_t *options)
     return EXIT_SUCCESS;
 }
 
+/* Cf. Tony Brown: bonybrown/tiny-AES128.C */
+int pkcs7_padding_pad_buffer( uint8_t *buffer,  size_t data_length, size_t buffer_size, uint8_t modulus )
+{
+  uint8_t pad_byte = modulus - ( data_length % modulus ) ;
+  if( data_length + pad_byte > buffer_size )
+  {
+    return -pad_byte;
+  }
+  int i = 0;
+  while( i <  pad_byte)
+  {
+    buffer[data_length+i] = pad_byte;
+    i++;
+  }
+  return pad_byte;
+}
+
 int sign_file(options_t *options) 
 {
 
@@ -451,11 +474,31 @@ int sign_file(options_t *options)
      return EXIT_FAILURE;
    }
    
+   size_t bytes_read = 0;
+   int buffer_size = BUFFER_SIZE;
+   struct AES_ctx ctx;
+   unsigned char aes_iv_copy[AES_BLOCKLEN] = {};
+
+   if(options->use_aes_encryption)
+   {
+     if(options->verbose >= 1) printf("Using aes encryption\n");
+
+     buffer_size = AES_BLOCKLEN;
+     /* Create password based on zecret */
+     calculate_shared_key(options);
+     if(AES_BLOCKLEN != getrandom(aes_iv, AES_BLOCKLEN, 0))
+     {
+       printf("Could not get random values to initiate encryption\n");
+       return EXIT_FAILURE;
+     }
+     memcpy(aes_iv_copy, aes_iv, AES_BLOCKLEN);
+     AES_init_ctx_iv(&ctx, shared_secret, aes_iv);
+     if(options->verbose >= 2) printf("Initialized aes encryption\n");
+   }
+   
    /* Copied from sign.c because hash called iterativley
     * in order to not load the complete file into ram. */
    if(options->verbose >= 2) printf("Signing file\n");
-
-   size_t bytes_read = 0;
 
    sha512_context hash;
    unsigned char hram[64];
@@ -465,13 +508,28 @@ int sign_file(options_t *options)
 
    sha512_init(&hash);
    sha512_update(&hash, private_key + 32, 32);
-   while( BUFFER_SIZE == (bytes_read=fread(buffer, 1, BUFFER_SIZE, options->input)))
+   while( buffer_size == 
+          (bytes_read=fread(buffer, 1, buffer_size, options->input)))
    {
-     sha512_update(&hash, buffer, BUFFER_SIZE);
-     if(options->verbose >= 4) printf("sha512 full update\n");
+     if(options->use_aes_encryption)
+       AES_CBC_encrypt_buffer(&ctx, buffer, buffer_size);
+     sha512_update(&hash, buffer, buffer_size);
+     if(options->verbose >= 4) printf("sign full update\n");
+   }
+   if(options->use_aes_encryption)
+   {
+     if((16-bytes_read) != 
+         pkcs7_padding_pad_buffer(buffer,bytes_read, 
+		            buffer_size, 16 ))
+     {
+       printf("Could not get random values to initiate encryption\n");
+       return EXIT_FAILURE;
+     }
+     AES_CBC_encrypt_buffer(&ctx, buffer, buffer_size);
+     bytes_read = buffer_size;
    }
    sha512_update(&hash, buffer, bytes_read);
-   if(options->verbose >= 4) printf("sha512 remainging: %li\n",bytes_read);
+   if(options->verbose >= 4) printf("sign remainging: %li\n",bytes_read);
    sha512_final(&hash, r);
 
    sc_reduce(r);
@@ -483,12 +541,41 @@ int sign_file(options_t *options)
    sha512_update(&hash, public_key, 32);
    /*sha512_update(&hash, message, message_len);*/
    rewind(options->input);
-   while( BUFFER_SIZE == (bytes_read=fread(buffer, 1, BUFFER_SIZE, options->input)))
+   if(options->use_aes_encryption)
    {
+     memcpy(aes_iv, aes_iv_copy, AES_BLOCKLEN); /* use same iv */
+     AES_init_ctx_iv(&ctx, shared_secret, aes_iv);
+   }
+   while( buffer_size == 
+          (bytes_read=fread(buffer, 1, buffer_size, options->input)))
+   {
+     if(options->use_aes_encryption)
+       AES_CBC_encrypt_buffer(&ctx, buffer, buffer_size);
      sha512_update(&hash, buffer, BUFFER_SIZE);
      if(options->verbose >= 4) printf("sha512 full update\n");
+     if(options->merge)
+     {
+       fwrite(buffer, 1, bytes_read, options->output);
+     }
+   }
+   if(options->use_aes_encryption)
+   {
+     if((16-bytes_read) != 
+         pkcs7_padding_pad_buffer(buffer,bytes_read, 
+		            buffer_size, 16 ))
+     {
+       printf("Could not get random values to initiate encryption\n");
+       return EXIT_FAILURE;
+     }
+     AES_CBC_encrypt_buffer(&ctx, buffer, buffer_size);
+     bytes_read = buffer_size;
    }
    sha512_update(&hash, buffer, bytes_read);
+   if(options->merge)
+   {
+       fwrite(buffer, 1, bytes_read, options->output);
+   }
+
    if(options->verbose >= 4) printf("sha512 remainging: %li\n",bytes_read);
 
    sha512_final(&hash, hram);
@@ -496,29 +583,22 @@ int sign_file(options_t *options)
    sc_reduce(hram);
    sc_muladd(signature + 32, hram, private_key, r);
     
-   fprintf(options->output, 
-     "Signature %s\n",basename(options->input_filename));
+   /*fprintf(options->output, "\n");*/
    char* enc = b64_encode(public_key, 32);
    fprintf(options->output, "%s\n",enc);
    free( enc );
    enc = b64_encode(signature, 64);
    fprintf(options->output,"%s\n",enc);
-   free( enc );
+   free( enc ); 
+   fprintf(options->output, 
+     "%s Signature\n",basename(options->input_filename));
 
-   rewind(options->input);
-
-   if(options->merge)
-   {
-      while (0 < (bytes_read = fread(buffer, 1, sizeof(buffer), 
-		options->input)))
-        fwrite(buffer, 1, bytes_read, options->output);
-   }
 
    if(options->verbose >= 2) printf("Done\n");
    return EXIT_SUCCESS;
 }
 
-int show_shared_zecret(options_t *options)
+int calculate_shared_key(options_t* options)
 {
    if (!options) 
    {
@@ -533,7 +613,6 @@ int show_shared_zecret(options_t *options)
      return EXIT_FAILURE;
    }
 
-   unsigned char shared_secret[32];
    char public_key_user_b64[45];
    if(0 != find_public_key_for_user(
 			    options->selected_users[0], 
@@ -542,7 +621,6 @@ int show_shared_zecret(options_t *options)
      printf("Could not find user %s",options->selected_users[0]);
      errno = EINVAL;
      return EXIT_FAILURE;
-
    }
 
    unsigned char* public_user_key = 
@@ -553,6 +631,17 @@ int show_shared_zecret(options_t *options)
 			private_key);
 
    free( public_user_key );
+   return EXIT_SUCCESS;
+}
+
+int show_shared_zecret(options_t *options)
+{
+   int result;
+   if (EXIT_SUCCESS != 
+       (result = calculate_shared_key(options)))
+   {
+     return result;
+   }
 
    char* enc = b64_encode(shared_secret, 32);
    fprintf(options->output,"%s\n",enc);

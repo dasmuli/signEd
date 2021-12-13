@@ -13,6 +13,7 @@ extern unsigned char seed[32];
 extern unsigned char public_key[32];
 extern unsigned char private_key[64];
 extern unsigned char signature[64];
+extern unsigned char shared_secret[32];
 extern char name_of_entry[1024];
 extern char type_of_entry[12];
 

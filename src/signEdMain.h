@@ -18,6 +18,7 @@ typedef struct {
   char         *selected_users[256];
   int           num_selected_users;
   char         *personality;
+  int           use_aes_encryption;
 } options_t;
 
 #ifdef __cplusplus
