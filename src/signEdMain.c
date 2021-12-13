@@ -585,24 +585,23 @@ int sign_file(options_t *options)
    sc_reduce(hram);
    sc_muladd(signature + 32, hram, private_key, r);
     
-   if(options->use_aes_encryption)
-   {
-     fprintf(options->output, "\n%s\n",user_key);
-     enc = b64_encode(aes_iv_copy, AES_BLOCKLEN);
-     fprintf(options->output, "%s\n",enc);
-     free( enc );
-
-     fprintf(options->output,"AES256\n");
-   }
-   /*fprintf(options->output, "\n");*/
-   enc = b64_encode(public_key, 32);
-   fprintf(options->output, "%s\n",enc);
-   free( enc );
+     /*fprintf(options->output, "\n");*/
+   fprintf(options->output, 
+     "Signature %s\n",basename(options->input_filename));
    enc = b64_encode(signature, 64);
    fprintf(options->output,"%s\n",enc);
    free( enc ); 
-   fprintf(options->output, 
-     "%s Signature\n",basename(options->input_filename));
+   enc = b64_encode(public_key, 32);
+   fprintf(options->output, "%s\n",enc);
+   free( enc );
+   if(options->use_aes_encryption)
+   {
+     fprintf(options->output,"AES256\n");
+     enc = b64_encode(aes_iv_copy, AES_BLOCKLEN);
+     fprintf(options->output, "%s\n",enc);
+     free( enc );
+     fprintf(options->output, "\n%s\n",user_key);
+      }
 
 
    if(options->verbose >= 2) printf("Done\n");
