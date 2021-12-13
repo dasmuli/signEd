@@ -552,7 +552,7 @@ int sign_file(options_t *options)
    {
      if(options->use_aes_encryption)
        AES_CBC_encrypt_buffer(&ctx, buffer, buffer_size);
-     sha512_update(&hash, buffer, BUFFER_SIZE);
+     sha512_update(&hash, buffer, buffer_size);
      if(options->verbose >= 4) printf("sha512 full update\n");
      if(options->merge)
      {
