@@ -478,6 +478,7 @@ int sign_file(options_t *options)
    int buffer_size = BUFFER_SIZE;
    struct AES_ctx ctx;
    unsigned char aes_iv_copy[AES_BLOCKLEN] = {};
+   char* enc;
 
    if(options->use_aes_encryption)
    {
@@ -583,8 +584,16 @@ int sign_file(options_t *options)
    sc_reduce(hram);
    sc_muladd(signature + 32, hram, private_key, r);
     
+   if(options->use_aes_encryption)
+   {
+     enc = b64_encode(aes_iv_copy, AES_BLOCKLEN);
+     fprintf(options->output, "\n%s\n",enc);
+     free( enc );
+
+     fprintf(options->output,"AES256\n");
+   }
    /*fprintf(options->output, "\n");*/
-   char* enc = b64_encode(public_key, 32);
+   enc = b64_encode(public_key, 32);
    fprintf(options->output, "%s\n",enc);
    free( enc );
    enc = b64_encode(signature, 64);
