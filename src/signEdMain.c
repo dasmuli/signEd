@@ -43,7 +43,7 @@ void usage(char *progname, int opt);
 int sign_file(options_t *options);
 int check_file_signature(options_t *options);
 int show_shared_zecret(options_t *options);
-int calculate_shared_key(options_t* options);
+int calculate_shared_key(options_t* options, char* user_key_found);
 
 void phex(unsigned char* str, int len)
 {
@@ -479,6 +479,7 @@ int sign_file(options_t *options)
    struct AES_ctx ctx;
    unsigned char aes_iv_copy[AES_BLOCKLEN] = {};
    char* enc;
+   char user_key[1024];
 
    if(options->use_aes_encryption)
    {
@@ -486,7 +487,7 @@ int sign_file(options_t *options)
 
      buffer_size = AES_BLOCKLEN;
      /* Create password based on zecret */
-     calculate_shared_key(options);
+     calculate_shared_key(options, user_key);
      if(AES_BLOCKLEN != getrandom(aes_iv, AES_BLOCKLEN, 0))
      {
        printf("Could not get random values to initiate encryption\n");
@@ -586,8 +587,9 @@ int sign_file(options_t *options)
     
    if(options->use_aes_encryption)
    {
+     fprintf(options->output, "\n%s\n",user_key);
      enc = b64_encode(aes_iv_copy, AES_BLOCKLEN);
-     fprintf(options->output, "\n%s\n",enc);
+     fprintf(options->output, "%s\n",enc);
      free( enc );
 
      fprintf(options->output,"AES256\n");
@@ -607,7 +609,8 @@ int sign_file(options_t *options)
    return EXIT_SUCCESS;
 }
 
-int calculate_shared_key(options_t* options)
+int calculate_shared_key(options_t* options,
+	char* public_key_user_b64)
 {
    if (!options) 
    {
@@ -622,7 +625,6 @@ int calculate_shared_key(options_t* options)
      return EXIT_FAILURE;
    }
 
-   char public_key_user_b64[45];
    if(0 != find_public_key_for_user(
 			    options->selected_users[0], 
 		            public_key_user_b64))
@@ -646,8 +648,9 @@ int calculate_shared_key(options_t* options)
 int show_shared_zecret(options_t *options)
 {
    int result;
+   char user_key[1024];
    if (EXIT_SUCCESS != 
-       (result = calculate_shared_key(options)))
+       (result = calculate_shared_key(options, user_key)))
    {
      return result;
    }
