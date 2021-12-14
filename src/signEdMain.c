@@ -586,23 +586,25 @@ int sign_file(options_t *options)
    sc_muladd(signature + 32, hram, private_key, r);
     
      /*fprintf(options->output, "\n");*/
-   fprintf(options->output, 
-     "Signature %s\n",basename(options->input_filename));
-   enc = b64_encode(signature, 64);
-   fprintf(options->output,"%s\n",enc);
-   free( enc ); 
-   enc = b64_encode(public_key, 32);
-   fprintf(options->output, "%s\n",enc);
-   free( enc );
+   printf("\n");
    if(options->use_aes_encryption)
    {
      fprintf(options->output,"AES256\n");
      enc = b64_encode(aes_iv_copy, AES_BLOCKLEN);
      fprintf(options->output, "%s\n",enc);
      free( enc );
-     fprintf(options->output, "\n%s\n",user_key);
-      }
+     fprintf(options->output, "%s\n",user_key);
+   }
 
+   fprintf(options->output, 
+     "Signature %-50s\n",basename(options->input_filename));
+   enc = b64_encode(signature, 64);
+   fprintf(options->output,"%s\n",enc);
+   free( enc ); 
+   enc = b64_encode(public_key, 32);
+   fprintf(options->output, "%s\n",enc);
+   free( enc );
+   
 
    if(options->verbose >= 2) printf("Done\n");
    return EXIT_SUCCESS;
