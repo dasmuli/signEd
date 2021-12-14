@@ -369,6 +369,8 @@ int check_file_signature(options_t *options)
    if(options->verbose >= 2) printf("Verifying file is signed\n");
 
     char signature_B64[1024];
+    char aes_iv_B64[1024];
+    char aes_public_key_B64[1024];
     char signature_public_key_B64[1024];
     unsigned char signed_filename[1024];
     unsigned char signature[64];
@@ -378,15 +380,34 @@ int check_file_signature(options_t *options)
     sha512_context hash;
     ge_p3 A;
     ge_p2 R;
-    
-    if(3 != fscanf( options->signature_input, "Signature %s\n%s\n%s\n",
-      signed_filename, signature_public_key_B64,
-      signature_B64 ))
+
+    /* Search signature at the end of the file. */
+    //fseek(options->input, 0L, SEEK_END);
+    if(options->use_aes_encryption)
     {
+      fseek(options->input, -(45+89+10+51+45+25+7), SEEK_END);
+      int r = fscanf(options->input, "AES256\n%s\n%s\nSignature %s\n%s\n%s\n",
+		   aes_iv_B64,aes_public_key_B64, signed_filename,
+		   signature, signature_public_key_B64);
+      if(r != 5)
+      {
 	printf("Signature format error.\n");
         return EXIT_FAILURE;
+      }
     }
-
+    else
+    {
+      fseek(options->input, -(45+89+10+51), SEEK_END);
+      int r = fscanf(options->input, "Signature %s\n%s\n%s\n",
+		   signed_filename,
+		   signature, signature_public_key_B64);
+      if(r != 3)
+      {
+	printf("Signature format error.\n");
+        return EXIT_FAILURE;
+      }
+    }
+    
     /* Search public key in own data. */
     if(0 != search_for_public_key(signature_public_key_B64))
     {
