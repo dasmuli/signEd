@@ -377,18 +377,21 @@ int check_file_signature(options_t *options)
     unsigned char signature_public_key[64];
     unsigned char h[64];
     unsigned char checker[32];
+    int r;
     sha512_context hash;
     ge_p3 A;
     ge_p2 R;
+    size_t data_end = 0;
 
     /* Search signature at the end of the file. */
     //fseek(options->input, 0L, SEEK_END);
     if(options->use_aes_encryption)
     {
-      fseek(options->input, -(45+89+10+51+45+25+7), SEEK_END);
-      int r = fscanf(options->input, "AES256\n%s\n%s\nSignature %s\n%s\n%s\n",
+      fseek(options->input, -(45+89+10+51+45+25+7+1), SEEK_END);
+      data_end = ftell( options->input );
+      r = fscanf(options->input, "\nAES256\n%s\n%s\nSignature %s\n%s\n%s\n",
 		   aes_iv_B64,aes_public_key_B64, signed_filename,
-		   signature, signature_public_key_B64);
+		   signature_B64, signature_public_key_B64);
       if(r != 5)
       {
 	printf("Signature format error.\n");
@@ -397,13 +400,14 @@ int check_file_signature(options_t *options)
     }
     else
     {
-      fseek(options->input, -(45+89+10+51), SEEK_END);
-      int r = fscanf(options->input, "Signature %s\n%s\n%s\n",
+      fseek(options->input, -(45+89+10+51+1), SEEK_END);
+      data_end = ftell( options->input );
+      r = fscanf(options->input, "\nSignature %s\n%s\n%s\n",
 		   signed_filename,
-		   signature, signature_public_key_B64);
+		   signature_B64, signature_public_key_B64);
       if(r != 3)
       {
-	printf("Signature format error.\n");
+	printf("Signature format error, strings found: %i.\n",r);
         return EXIT_FAILURE;
       }
     }
@@ -435,16 +439,21 @@ int check_file_signature(options_t *options)
         return EXIT_FAILURE;
     }
 
+    rewind(options->input);
     sha512_init(&hash);
     sha512_update(&hash, signature, 32);
     sha512_update(&hash, signature_public_key, 32);
     /*sha512_update(&hash, message, message_len);*/
     size_t bytes_read = 0;
-    while( BUFFER_SIZE == (bytes_read=fread(buffer, 1, BUFFER_SIZE, options->input)))
+    while( ftell(options->input)+BUFFER_SIZE < data_end &&
+	   BUFFER_SIZE == 
+           (bytes_read=fread(buffer, 1, BUFFER_SIZE, options->input)))
     {
       sha512_update(&hash, buffer, BUFFER_SIZE);
       if(options->verbose >= 4) printf("sha512 full update\n");
     }
+    bytes_read=fread(buffer, 1, data_end-ftell(options->input), 
+		    options->input);
     sha512_update(&hash, buffer, bytes_read);
     if(options->verbose >= 4) printf("sha512 remainging: %li\n",bytes_read);
 
@@ -607,7 +616,7 @@ int sign_file(options_t *options)
    sc_muladd(signature + 32, hram, private_key, r);
     
      /*fprintf(options->output, "\n");*/
-   printf("\n");
+   fprintf(options->output,"\n");
    if(options->use_aes_encryption)
    {
      fprintf(options->output,"AES256\n");
