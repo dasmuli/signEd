@@ -4,7 +4,7 @@
 #
 
 CC = gcc
-CFLAGS = -Wall -O2 -MMD
+CFLAGS = -Wall -g -MMD
 INCLUDES =
 LFLAGS =
 LIBS =

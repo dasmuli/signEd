@@ -43,7 +43,10 @@ void usage(char *progname, int opt);
 int sign_file(options_t *options);
 int check_file_signature(options_t *options);
 int show_shared_zecret(options_t *options);
-int calculate_shared_key(options_t* options, char* user_key_found);
+int calculate_shared_key(options_t* options, 
+		char* user_key_found);
+void calculate_shared_key_with_user_key( options_t* options, 
+		char* public_key_user_B64 );
 
 void phex(unsigned char* str, int len)
 {
@@ -371,7 +374,11 @@ int check_file_signature(options_t *options)
     char signature_B64[1024];
     char aes_iv_B64[1024];
     char aes_public_key_B64[1024];
+    char public_key_B64[1024];
+    char private_key_B64[1024];
     char signature_public_key_B64[1024];
+    char command[32];
+    char user[50];
     unsigned char signed_filename[1024];
     unsigned char signature[64];
     unsigned char signature_public_key[64];
@@ -384,7 +391,6 @@ int check_file_signature(options_t *options)
     size_t data_end = 0;
 
     /* Search signature at the end of the file. */
-    //fseek(options->input, 0L, SEEK_END);
     if(options->use_aes_encryption)
     {
       fseek(options->input, -(45+89+10+51+45+25+7+1), SEEK_END);
@@ -469,6 +475,55 @@ int check_file_signature(options_t *options)
     }
 
     printf("File is signed\n");
+
+    /* Decrypt only on correctly signed file. */
+    if(options->use_aes_encryption)
+    {
+       rewind(options->input);
+       struct AES_ctx ctx;
+       /* Lookup public key in personality list. */
+       if( EXIT_SUCCESS != search_key_entry(NULL,
+         "Personality", NULL,
+         aes_public_key_B64, NULL,
+         command, user, 
+         public_key_B64, private_key_B64))
+       {
+         printf("Could not find personality for %s", aes_public_key_B64);
+	 return EXIT_FAILURE;
+       }
+      
+       dec = b64_decode(public_key_B64, 44);
+       memcpy( (void*)public_key, (void*) dec, 32 );
+       free( dec );
+       dec = b64_decode(private_key_B64, 88);
+       memcpy( (void*)private_key, (void*) dec, 64 );
+       free( dec );
+
+       options->num_selected_users = 1;
+       options->selected_users[0] = signature_public_key_B64;
+
+       if(options->verbose >= 4) printf("calculating shared key for %s\n",
+		       signature_public_key_B64);
+       calculate_shared_key_with_user_key( options,
+		       signature_public_key_B64 );
+       if(options->verbose >= 4) printf("AES IV: %s\n",
+		       aes_iv_B64);
+
+       dec = b64_decode(aes_iv_B64, 24);
+       memcpy( (void*)aes_iv, (void*) dec, AES_BLOCKLEN );
+       free( dec );
+
+       AES_init_ctx_iv(&ctx, shared_secret, aes_iv);
+       while( ftell(options->input)+AES_BLOCKLEN <= data_end &&
+	   AES_BLOCKLEN == 
+           (bytes_read=fread(buffer, 1, AES_BLOCKLEN, options->input)))
+       {
+         if(options->verbose >= 4) printf("aes256 full decrypt\n");
+	 AES_CBC_decrypt_buffer(&ctx, buffer, AES_BLOCKLEN);
+	 fwrite(buffer, 1, AES_BLOCKLEN, options->output);
+       }
+       //fwrite(buffer, 1, AES_BLOCKLEN, options->output);
+    }
     return EXIT_SUCCESS;
 }
 
@@ -640,6 +695,28 @@ int sign_file(options_t *options)
    return EXIT_SUCCESS;
 }
 
+
+void calculate_shared_key_with_user_key(options_t* options,
+	       	char* public_key_user_b64 )
+{
+   unsigned char* public_user_key = 
+	   b64_decode(public_key_user_b64, 44);
+
+   ed25519_key_exchange(shared_secret,
+                        public_user_key, 
+			private_key);
+
+   free( public_user_key );
+   if(options->verbose >= 4)
+   {
+      char* shared_secret_b64 = b64_encode(shared_secret, 32);
+      printf("secret is %s\n", shared_secret_b64);
+      free( shared_secret_b64 );
+   }
+
+}
+
+
 int calculate_shared_key(options_t* options,
 	char* public_key_user_b64)
 {
@@ -665,16 +742,11 @@ int calculate_shared_key(options_t* options,
      return EXIT_FAILURE;
    }
 
-   unsigned char* public_user_key = 
-	   b64_decode(public_key_user_b64, 44);
-
-   ed25519_key_exchange(shared_secret,
-                        public_user_key, 
-			private_key);
-
-   free( public_user_key );
+   calculate_shared_key_with_user_key( options, public_key_user_b64 );
    return EXIT_SUCCESS;
 }
+
+
 
 int show_shared_zecret(options_t *options)
 {

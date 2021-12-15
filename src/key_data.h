@@ -28,6 +28,12 @@ int add_personality(options_t *options);
 int select_personality(options_t *options);
 int show_personality_list(options_t *options);
 int show_user_list(options_t *options);
+int search_key_entry(FILE* file_handle,
+     char* filter_command, char* filter_user,
+     char* filter_public_key, char* filter_private_key,
+     char* out_command, char* out_user, 
+     char* out_public_key, char* out_private_key);
+
 #ifdef __cplusplus
 }
 #endif /* key_data_H */
