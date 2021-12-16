@@ -561,6 +561,7 @@ int sign_file(options_t *options)
    
    size_t bytes_read = 0;
    int buffer_size = BUFFER_SIZE;
+   size_t message_length = 0;
    struct AES_ctx ctx;
    unsigned char aes_iv_copy[AES_BLOCKLEN] = {};
    char* enc;
@@ -614,9 +615,11 @@ int sign_file(options_t *options)
      }
      AES_CBC_encrypt_buffer(&ctx, buffer, buffer_size);
      bytes_read = buffer_size;
+     message_length = ftell( options->input );
+     if(options->verbose >= 1) printf("message length: %lu\n",message_length);
    }
    sha512_update(&hash, buffer, bytes_read);
-   if(options->verbose >= 4) printf("sign remainging: %li\n",bytes_read);
+if(options->verbose >= 4) printf("sign remainging: %li\n",bytes_read);
    sha512_final(&hash, r);
 
    sc_reduce(r);
@@ -674,7 +677,7 @@ int sign_file(options_t *options)
    fprintf(options->output,"\n");
    if(options->use_aes_encryption)
    {
-     fprintf(options->output,"AES256\n");
+     fprintf(options->output,"AES256 %lu\n",message_length);
      enc = b64_encode(aes_iv_copy, AES_BLOCKLEN);
      fprintf(options->output, "%s\n",enc);
      free( enc );
