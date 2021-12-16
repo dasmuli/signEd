@@ -12,8 +12,8 @@ parts:
   my-part:
     # See 'snapcraft plugins'
     plugin: make
-    source: ./
-      #source: https://github.com/dasmuli/signEd.git
+      #source: ./
+    source: https://github.com/dasmuli/signEd.git
 
 apps:
   signed:
