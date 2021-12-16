@@ -19,6 +19,7 @@ typedef struct {
   int           num_selected_users;
   char         *personality;
   int           use_aes_encryption;
+  int           extract;
 } options_t;
 
 #ifdef __cplusplus

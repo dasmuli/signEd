@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
     int expected_strings = 0;
     int opt;
     options_t options = { 0, false, 0x0, stdin, stdout, stdin, 0x0, 0x0,
-        {}, 0, 0x0, 0 };
+        {}, 0, 0x0, 0, 0 };
 
     opterr = 0;
 
@@ -161,13 +161,7 @@ int main(int argc, char* argv[])
 
 
            case 'x':
-	      if (command != '0'){
-		 errno = EINVAL;
-                 perror("Only one command allowed each time.");
-                 exit(EXIT_FAILURE);
-                 /* NOTREACHED */
-              }
-	      command = 'x';
+	      options.extract = 1;
               break;
 	   
 	   case 'w':
@@ -392,24 +386,22 @@ int check_file_signature(options_t *options)
     size_t data_end = 0;
 
     /* Search signature at the end of the file. */
-    if(options->use_aes_encryption)
-    {
-      fseek(options->input, -(45+89+10+51+45+25+7+1), SEEK_END);
-      data_end = ftell( options->input );
-      r = fscanf(options->input, "\nAES256\n%s\n%s\nSignature %s\n%s\n%s\n",
+    fseek(options->input, -(45+89+10+51+45+25+7+1), SEEK_END);
+    data_end = ftell( options->signature_input );
+    r = fscanf(options->input, "\nAES256\n%s\n%s\nSignature %s\n%s\n%s\n",
 		   aes_iv_B64,aes_public_key_B64, signed_filename,
 		   signature_B64, signature_public_key_B64);
-      if(r != 5)
-      {
-	printf("Signature format error.\n");
-        return EXIT_FAILURE;
-      }
-    }
-    else
+    if(r != 5)
     {
-      fseek(options->input, -(45+89+10+51+1), SEEK_END);
-      data_end = ftell( options->input );
-      r = fscanf(options->input, "\nSignature %s\n%s\n%s\n",
+      fseek(options->signature_input, -(45+89+10+51+1), SEEK_END);
+      if(options->signature_input == options->input)
+        data_end = ftell( options->signature_input );
+      else
+      {
+	fseek(options->input, 0, SEEK_END);
+        data_end = ftell( options->input );
+      }
+      r = fscanf(options->signature_input, "\nSignature %s\n%s\n%s\n",
 		   signed_filename,
 		   signature_B64, signature_public_key_B64);
       if(r != 3)
@@ -417,6 +409,11 @@ int check_file_signature(options_t *options)
 	printf("Signature format error, strings found: %i.\n",r);
         return EXIT_FAILURE;
       }
+    }
+    else
+    {
+      /* Automatically set this when detected in file. */
+      options->use_aes_encryption = 1;
     }
     
     /* Search public key in own data. */
@@ -478,7 +475,7 @@ int check_file_signature(options_t *options)
     printf("File is signed\n");
 
     /* Decrypt only on correctly signed file. */
-    if(options->use_aes_encryption)
+    if(options->extract && options->use_aes_encryption)
     {
        rewind(options->input);
        struct AES_ctx ctx;
@@ -529,7 +526,8 @@ int check_file_signature(options_t *options)
            if(options->verbose >= 4) printf("aes final buffer length: %lu\n",
 		buffer_length);
 	 }
-	 fwrite(buffer, 1, buffer_length, options->output);
+	 if(options->extract)
+           fwrite(buffer, 1, buffer_length, options->output);
        }
     }
     return EXIT_SUCCESS;
