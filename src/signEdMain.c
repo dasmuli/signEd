@@ -29,7 +29,7 @@
 #define ERR_FOPEN_OUTPUT "fopen(output, w)"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
 #define ERR_VERIFY "File not signed"
-#define DEFAULT_PROGNAME "george"
+#define DEFAULT_PROGNAME "signEd"
 #define BUFFER_SIZE (1 * 1024 * 1024)
 
 extern int errno;
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
       /* NOTREACHED */
     }
 
-    init_data(&options);
+    init_data_from_keyfile(&options);
 
 
     switch(command)
@@ -429,7 +429,7 @@ int check_file_signature(options_t *options)
         return EXIT_FAILURE;
     }
 
-    printf("File is signed by %s\n",public_key_user);
+    if(!options->extract) printf("File is signed by %s\n",public_key_user);
 
     /* Decrypt only on correctly signed file. */
     if(options->extract && options->use_aes_encryption)

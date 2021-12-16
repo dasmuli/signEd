@@ -18,7 +18,7 @@ extern char name_of_entry[1024];
 extern char type_of_entry[12];
 
 
-void init_data(options_t* opt);
+void init_data_from_keyfile(options_t* opt);
 int add_user(options_t* opt, const char* public_key, const char* username );
 int search_for_public_key(char* signature_public_key, char* public_key_user);
 int remove_signature_from_file(options_t* options);
