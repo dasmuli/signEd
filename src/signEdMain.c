@@ -29,6 +29,7 @@ signEd                                     - Prints your public key\n\
 signEd -s -i input -o output               - Signs input writing to output\n\
 signEd -c -i input -f signaturefile        - Checks the signature of a file\n\
 signEd -s -m -i input -o output            - Merges input and sig. in one file\n\
+signEd -c -i input                         - Checks signature of a merged file\n\
 signEd -s -m -e -i input -o output -u user - Sign and encrypt into one file\n\
 signEd -c -x -i input -o output            - Check, decrypt and extract\n\
 signEd -z -u user                          - Show the secret key for the user and you\n\
