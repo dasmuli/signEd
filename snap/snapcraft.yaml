@@ -1,12 +1,12 @@
 name: signed # you probably want to 'snapcraft register <name>'
 base: core20 # the base snap is the execution environment for this snap
-version: '0.3' # just for humans, typically '1.2+git' or '1.3.2'
+version: '0.4' # just for humans, typically '1.2+git' or '1.3.2'
 summary: A command line tool to sign, verify, encrypt and show a mutual secret.  # 79 char long summary
 description: |
   This is a command line tool to sign and check (proprietary) signatures with optional AES encryption. It is based on Ed25519. You can exchange public keys to verify files and you can print a shared secret word that only you and the other user know.
 
 grade: devel # must be 'stable' to release into candidate/stable channels
-confinement: devmode # use 'strict' once you have the right plugs and slots
+confinement: strict #devmode # use 'strict' once you have the right plugs and slots
 
 parts:
   my-part:
