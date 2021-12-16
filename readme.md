@@ -7,11 +7,12 @@ The base64 encoding/decoding source is copied from [littlstar](https://github.co
 
 For fun, aes encryption is added from [kokke](https://github.com/kokke/tiny-AES-c) using PKCS7 from [bonybrown](https://github.com/bonybrown/tiny-AES128-C), public domain.
 
-The code is ugly and hacked. Consider openssl.
+The code is ugly and hacked. MIT licensed. Consider openssl.
 
 Usage
 -----
 
+```
 signEd                                     - Prints your public key
 signEd -s -i input -o output               - Signs input writing to output
 signEd -c -i input -f signaturefile        - Checks the signature of a file
@@ -76,6 +77,7 @@ alice@Kratos:~$ signEd -z -u bob@Kratos
 5OlvXwI/9KjEz68LVWvMOM9kA1EAVtjQvH0z9bTJbz8=
 ```
 
+Note: the user bob@Kratos actually was dasmuli@Kratos, that evil guy.
 
 
 Installation
