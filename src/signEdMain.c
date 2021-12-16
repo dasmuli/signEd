@@ -560,6 +560,11 @@ int sign_file(options_t *options)
      errno = ENOENT;
      return EXIT_FAILURE;
    }
+   if(options->use_aes_encryption  && !options->merge)
+   {
+     printf("Encryption -e without merging -m will not work, as the signed data is lost.\n");
+     return EXIT_FAILURE;
+   }
    
    size_t bytes_read = 0;
    int buffer_size = BUFFER_SIZE;
