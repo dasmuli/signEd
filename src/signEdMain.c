@@ -24,9 +24,23 @@
 
 
 #define OPTSTR "vsi:o:f:hacxmzu:n:p:wle"
-#define USAGE_FMT  "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-n personality] [-p personality] [-l] [-w] [-e] [-h] "
-#define ERR_FOPEN_INPUT  "fopen(input, r)"
-#define ERR_FOPEN_OUTPUT "fopen(output, w)"
+const char* USAGE_FMT  = "%s [-v] [-s] [-c] [-i inputfile] [-o outputfile] [-f signaturefile] [-x] [-m] [-z] [-u] [-a public_key name] [-n personality] [-p personality] [-l] [-w] [-e] [-h] \n\
+./signEd                                     - Prints your public key\n\
+./signEd -s -i input -o output               - Signs input writing to output\n\
+./signEd -c -i input -f signaturefile        - Checks the signature of a file\n\
+./signEd -s -m -i input                      - Merges input and sig. in one file\n\
+./signEd -s -m -e -i input -o output -u user - Sign and encrypt into one file\n\
+./signEd -c -x -i input -o output            - Check, decrypt and extract\n\
+./signEd -z -u user                          - Show the secret key for the user and you\n\
+./signEd -n new_personality                  - Adds a new personality key for you\n\
+./signEd -p new_personality                  - Shows the public key for the personality\n\
+./signEd  -s -i input -p new_personality     - Signs with the personality\n\
+./signEd -w                                  - Show the list of local personalities\n\
+./signEd -a key user                         - Adds a public key for a user to be trusted\n\
+./signEd -l                                  - Show the list of trusted users\n\
+";
+#define ERR_FOPEN_INPUT  "Could not open input file"
+#define ERR_FOPEN_OUTPUT "Could not open output file"
 #define ERR_DO_THE_NEEDFUL "do_the_needful blew up"
 #define ERR_VERIFY "File not signed"
 #define DEFAULT_PROGNAME "signEd"
