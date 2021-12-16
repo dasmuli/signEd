@@ -4,7 +4,7 @@
 #
 
 CC = gcc
-CFLAGS = -Wall -g -MMD
+CFLAGS = -Wall -O2 -MMD -static 
 INCLUDES =
 LFLAGS =
 LIBS =
@@ -17,6 +17,15 @@ MAIN = signEd
 
 all:    $(MAIN)
 	@echo  Program has been compiled
+
+.PHONY: install
+install: $(MAIN)
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp $< $(DESTDIR)$(PREFIX)/bin/$(MAIN)
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/$(MAIN)
 
 $(MAIN): $(OBJS) 
 	$(CC) $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
