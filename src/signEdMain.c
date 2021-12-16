@@ -47,7 +47,8 @@ int calculate_shared_key(options_t* options,
 		char* user_key_found);
 void calculate_shared_key_with_user_key( options_t* options, 
 		char* public_key_user_B64 );
-
+size_t pkcs7_padding_data_length( uint8_t * buffer, 
+		size_t buffer_size, uint8_t modulus );
 void phex(unsigned char* str, int len)
 {
     unsigned char i;
@@ -518,11 +519,18 @@ int check_file_signature(options_t *options)
 	   AES_BLOCKLEN == 
            (bytes_read=fread(buffer, 1, AES_BLOCKLEN, options->input)))
        {
+	 size_t buffer_length = AES_BLOCKLEN;
          if(options->verbose >= 4) printf("aes256 full decrypt\n");
 	 AES_CBC_decrypt_buffer(&ctx, buffer, AES_BLOCKLEN);
-	 fwrite(buffer, 1, AES_BLOCKLEN, options->output);
+	 if(data_end <= ftell(options->input))
+	 {
+	   buffer_length = 
+	     pkcs7_padding_data_length( buffer, AES_BLOCKLEN, AES_BLOCKLEN );
+           if(options->verbose >= 4) printf("aes final buffer length: %lu\n",
+		buffer_length);
+	 }
+	 fwrite(buffer, 1, buffer_length, options->output);
        }
-       //fwrite(buffer, 1, AES_BLOCKLEN, options->output);
     }
     return EXIT_SUCCESS;
 }
@@ -544,6 +552,34 @@ int pkcs7_padding_pad_buffer( uint8_t *buffer,  size_t data_length, size_t buffe
   return pad_byte;
 }
 
+
+size_t pkcs7_padding_data_length( uint8_t * buffer, size_t buffer_size, uint8_t modulus ){
+  /* test for valid buffer size */
+  if( buffer_size % modulus != 0 ||
+    buffer_size < modulus ){
+    return 0;
+  }
+  uint8_t padding_value;
+  padding_value = buffer[buffer_size-1];
+  /* test for valid padding value */
+  if( padding_value < 1 || padding_value > modulus ){
+    return 0;
+  }
+  /* buffer must be at least padding_value + 1 in size */
+  if( buffer_size < padding_value + 1 ){
+    return 0;
+  }
+  uint8_t count = 1;
+  buffer_size --;
+  for( ; count  < padding_value ; count++){
+    buffer_size --;
+    if( buffer[buffer_size] != padding_value ){
+      return 0;
+    }
+  }
+  return buffer_size;
+}
+
 int sign_file(options_t *options) 
 {
 
@@ -561,7 +597,6 @@ int sign_file(options_t *options)
    
    size_t bytes_read = 0;
    int buffer_size = BUFFER_SIZE;
-   size_t message_length = 0;
    struct AES_ctx ctx;
    unsigned char aes_iv_copy[AES_BLOCKLEN] = {};
    char* enc;
@@ -615,11 +650,9 @@ int sign_file(options_t *options)
      }
      AES_CBC_encrypt_buffer(&ctx, buffer, buffer_size);
      bytes_read = buffer_size;
-     message_length = ftell( options->input );
-     if(options->verbose >= 1) printf("message length: %lu\n",message_length);
    }
    sha512_update(&hash, buffer, bytes_read);
-if(options->verbose >= 4) printf("sign remainging: %li\n",bytes_read);
+   if(options->verbose >= 4) printf("sign remainging: %li\n",bytes_read);
    sha512_final(&hash, r);
 
    sc_reduce(r);
@@ -677,7 +710,7 @@ if(options->verbose >= 4) printf("sign remainging: %li\n",bytes_read);
    fprintf(options->output,"\n");
    if(options->use_aes_encryption)
    {
-     fprintf(options->output,"AES256 %lu\n",message_length);
+     fprintf(options->output,"AES256\n");
      enc = b64_encode(aes_iv_copy, AES_BLOCKLEN);
      fprintf(options->output, "%s\n",enc);
      free( enc );
