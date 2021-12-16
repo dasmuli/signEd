@@ -159,10 +159,9 @@ int add_user(options_t* opt, char* public_key, char* username )
    return EXIT_SUCCESS;
 }
 
-int search_for_public_key(char* signature_public_key)
+int search_for_public_key(char* signature_public_key, char* username)
 {
    char command[24];
-   char username[1024];
    char public_key_b64[1024];
    char private_key_b64[1024];
 

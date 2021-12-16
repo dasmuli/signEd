@@ -372,6 +372,7 @@ int check_file_signature(options_t *options)
     char public_key_B64[1024];
     char private_key_B64[1024];
     char signature_public_key_B64[1024];
+    char public_key_user[1024];
     char command[32];
     char user[50];
     unsigned char signed_filename[1024];
@@ -417,7 +418,7 @@ int check_file_signature(options_t *options)
     }
     
     /* Search public key in own data. */
-    if(0 != search_for_public_key(signature_public_key_B64))
+    if(0 != search_for_public_key(signature_public_key_B64, public_key_user))
     {
         printf("Unknown public key\n");
         return EXIT_FAILURE;
@@ -472,21 +473,22 @@ int check_file_signature(options_t *options)
         return EXIT_FAILURE;
     }
 
-    printf("File is signed\n");
+    printf("File is signed by %s\n",public_key_user);
 
     /* Decrypt only on correctly signed file. */
     if(options->extract && options->use_aes_encryption)
     {
        rewind(options->input);
        struct AES_ctx ctx;
-       /* Lookup public key in personality list. */
+       /* Lookup aes message target public key in own personality list. */
        if( EXIT_SUCCESS != search_key_entry(NULL,
          "Personality", NULL,
          aes_public_key_B64, NULL,
          command, user, 
          public_key_B64, private_key_B64))
        {
-         printf("Could not find personality for %s", aes_public_key_B64);
+         printf("Could not find own personality for %s, message not for me", 
+	  aes_public_key_B64);
 	 return EXIT_FAILURE;
        }
       
