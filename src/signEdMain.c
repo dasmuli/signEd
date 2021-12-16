@@ -50,34 +50,6 @@ void calculate_shared_key_with_user_key( options_t* options,
 size_t pkcs7_padding_data_length( uint8_t * buffer, 
 		size_t buffer_size, uint8_t modulus );
 
-char* mnemonic1[] = { "the house", "the cat", "superman" };
-size_t mnemonic1_length = sizeof(mnemonic1)/sizeof(mnemonic1[0]);
-char* mnemonic2[] = { "eats", "crashes", "fries", "delivers" };
-size_t mnemonic2_length = sizeof(mnemonic2)/sizeof(mnemonic2[0]);
-char* mnemonic3[] = { "my neighbour", "a smelly pie", "a chandelier" };
-size_t mnemonic3_length = sizeof(mnemonic3)/sizeof(mnemonic3[0]);
-char* mnemonic4[] = { "in the face", "hidden from public", "and said hi" };
-size_t mnemonic4_length = sizeof(mnemonic4)/sizeof(mnemonic4[0]);
-
-void print_mnemonic_part( uint64_t** pvalue, 
-  int* length, char* mnemonic[], size_t mnemonic_length)
-{
-  int index = **pvalue % mnemonic_length;
-  printf("%s ", mnemonic[ index ] );
-  *pvalue += 1;
-  *length -= 8;
-}
-
-void print_mnemonic( unsigned char* data, int length )
-{
-  uint64_t* pvalue = (uint64_t*)data;
-  print_mnemonic_part( &pvalue, &length, mnemonic1, mnemonic1_length);
-  print_mnemonic_part( &pvalue, &length, mnemonic2, mnemonic2_length);
-  print_mnemonic_part( &pvalue, &length, mnemonic3, mnemonic3_length);
-  print_mnemonic_part( &pvalue, &length, mnemonic4, mnemonic4_length);
-  printf("\n");
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -257,16 +229,7 @@ int main(int argc, char* argv[])
     }
 
     init_data(&options);
-    if(options.verbose >= 3)
-    {
-      printf("mnemonic for public key:\n");
-      print_mnemonic( public_key, 32 );
-    }
 
-    /*for ( ; optind < argc; optind++) 
-    {
-      argv[optind]
-    }*/
 
     switch(command)
     {
