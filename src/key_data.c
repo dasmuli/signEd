@@ -39,7 +39,7 @@ int generate_personality(FILE* file_handle, char* name, options_t* opt);
 
 void init_data_from_keyfile(options_t* opt)
 {
-  char* home_dir=getenv("SNAP_USER_DATA");
+  char* home_dir=getenv("SNAP_USER_COMMON");
   if(NULL == home_dir)
     home_dir=getenv("HOME");
   sprintf( file_path, "%s/.signEd", home_dir);
