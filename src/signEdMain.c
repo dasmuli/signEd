@@ -343,8 +343,15 @@ int check_file_signature(options_t *options)
     size_t data_end = 0;
 
     /* Search signature at the end of the file. */
-    fseek(options->input, -(45+89+10+51+45+25+7+1), SEEK_END);
-    data_end = ftell( options->signature_input );
+    fseek(options->signature_input, -(45+89+10+51+45+25+7+1), SEEK_END);
+    if(options->signature_input == options->input)
+      data_end = ftell( options->signature_input );
+    else
+    {
+      fseek(options->input, 0, SEEK_END);
+      data_end = ftell( options->input );
+    }
+
     r = fscanf(options->input, "\nAES256\n%s\n%s\nSignature %s\n%s\n%s\n",
 		   aes_iv_B64,aes_public_key_B64, signed_filename,
 		   signature_B64, signature_public_key_B64);
@@ -366,12 +373,15 @@ int check_file_signature(options_t *options)
 	printf("Signature format error, strings found: %i.\n",r);
         return EXIT_FAILURE;
       }
+      if(options->verbose >= 1) printf("Signature detected\n");
     }
     else
     {
+      if(options->verbose >= 1) printf("AES detected\n");
       /* Automatically set this when detected in file. */
       options->use_aes_encryption = 1;
     }
+    if(options->verbose >= 4) printf("data length: %lu\n", data_end);
     
     /* Search public key in own data. */
     if(0 != search_for_public_key(signature_public_key_B64, public_key_user))
@@ -720,7 +730,7 @@ int calculate_shared_key(options_t* options,
 
    if (options->num_selected_users <= 0) /*|| !options->output) {*/
    {
-     printf("You need to selected at least one user with -u\n");
+     printf("You need to selected at least one user with -u, try sigEd -l\n");
      errno = EINVAL;
      return EXIT_FAILURE;
    }
