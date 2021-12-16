@@ -83,7 +83,9 @@ Note: the user bob@Kratos actually was dasmuli@Kratos, that evil guy.
 Installation
 ------------
 
-Clone and make.
+Install [![signed](https://snapcraft.io/signed/badge.svg)](https://snapcraft.io/signed) from snapcraft.
+
+Or clone and make.
 
 Requirements
 ------------
