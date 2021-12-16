@@ -83,7 +83,7 @@ Note: the user bob@Kratos actually was dasmuli@Kratos, that evil guy.
 Installation
 ------------
 
-Install [![signed](https://snapcraft.io/signed/badge.svg)](https://snapcraft.io/signed) from snapcraft, ``sudo snap install signed``on Ubuntu. Note that reinstalling/update currently deletes the key file.
+Install [![signed](https://snapcraft.io/signed/badge.svg)](https://snapcraft.io/signed) from snapcraft, ``sudo snap install signed`` on Ubuntu.
 
 Or clone and make.
 
