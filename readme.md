@@ -27,7 +27,7 @@ signEd  -s -i input -p personality         - Signs with the personality
 signEd -w                                  - Show the list of local personalities
 signEd -a key user                         - Adds a public key for a user to be trusted
 signEd -l                                  - Show the list of trusted users
-
+```
 
 
 Example session
