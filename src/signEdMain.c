@@ -49,13 +49,6 @@ void calculate_shared_key_with_user_key( options_t* options,
 		char* public_key_user_B64 );
 size_t pkcs7_padding_data_length( uint8_t * buffer, 
 		size_t buffer_size, uint8_t modulus );
-void phex(unsigned char* str, int len)
-{
-    unsigned char i;
-    for (i = 0; i < len; ++i)
-        printf("%.2x", str[i]);
-    printf("\n");
-}
 
 char* mnemonic1[] = { "the house", "the cat", "superman" };
 size_t mnemonic1_length = sizeof(mnemonic1)/sizeof(mnemonic1[0]);
