@@ -23,7 +23,7 @@ signEd -c -x -i input -o output            - Check, decrypt and extract
 signEd -z -u user                          - Show the secret key for the user and you
 signEd -n personality                      - Adds a new personality key for you
 signEd -p personality                      - Shows the public key for the personality
-signEd  -s -i input -p personality         - Signs with the personality
+signEd -s -i input -p personality          - Signs with the personality
 signEd -w                                  - Show the list of local personalities
 signEd -a key user                         - Adds a public key for a user to be trusted
 signEd -l                                  - Show the list of trusted users
@@ -33,34 +33,35 @@ signEd -l                                  - Show the list of trusted users
 Example session
 ---------------
 
-Show public key:
+Show your public key:
 ```
-alice@Kratos:~$ signEd
+alice@Kratos:~$ signed
 eYkoZ61SvpofdIKbpS6SkyoWyX17VErbIUSv2+/LQTA= alice@Kratos
 ```
 
 Sign a file printing to console:
 ```
-alice@Kratos:~$ signEd -s -i msg.txt
+alice@Kratos:~$ signed -s -i msg.txt
 
 Signature msg.txt                                           
 OXozCYdq3n/tN8Oab8JebzZUVD5CIMotwfudV/Pw/2C4wkvU21preZZk3Pd0K7CMeMJSj1sgfkxJJNK47qTwAQ==
 eYkoZ61SvpofdIKbpS6SkyoWyX17VErbIUSv2+/LQTA=
 ```
 
-Sign a file and output the signature into a file:
+Sign a file and put the signature into its own file:
 ```
-alice@Kratos:~$ signEd -s -i msg.txt -o msg.txt.signed 
-```
-
-Add a user:
-```
-alice@Kratos:~$ signEd -a 9fb92WtxqOqsDvSiB/Oj2H1anVNF7vE87Wxg672YNDc= bob@Kratos
+alice@Kratos:~$ signed -s -i msg.txt -o msg.txt.signed 
 ```
 
-Sign and encrypt into one file:
+Now check with another user that this file was signed by alice:
 ```
-alice@Kratos:~$ signEd -s -m -e -u bob@Kratos -i msg.txt -o msg.txt.aes.signed 
+dasmuli@Kratos:~$ signed -c -i msg.txt -f msg.txt.signed 
+File is signed by alice@Kratos
+```
+
+Sign and encrypt data into one file:
+```
+alice@Kratos:~$ signed -s -m -e -u dasmuli@Kratos -i msg.txt -o msg.txt.aes.signed 
 alice@Kratos:~$ cat msg.txt.aes.signed 
 �){����8�lG�a�5P
 AES256
@@ -71,13 +72,52 @@ p5hFHBeiaea94I8O0roS6S+SCipVb7ceOurG0RxVEI1H7pdmD+Sj5z9aG/tWhG7tz6k5Dg2wDwjyWB/N
 eYkoZ61SvpofdIKbpS6SkyoWyX17VErbIUSv2+/LQTA=
 ```
 
-Finally show a shared zecret word with a user based on ED25519:
+This can be checked for a known signature with:
 ```
-alice@Kratos:~$ signEd -z -u bob@Kratos
-5OlvXwI/9KjEz68LVWvMOM9kA1EAVtjQvH0z9bTJbz8=
+signed -c -i msg.txt.aes.signed 
+File is signed by alice@Kratos
 ```
 
-Note: the user bob@Kratos actually was dasmuli@Kratos, that evil guy.
+Checking the signature and encrypting in one step can be done with:
+```
+signed -c -x -i msg.txt.aes.signed 
+Hi muli
+```
+
+Or you can check the signature, decrypt and write into a file using:
+```
+signed -c -x -i msg.txt.aes.signed -o msg.txt
+cat msg.txt 
+Hi muli
+```
+
+If this file was not encrypted for me, it will look like:
+```
+signed -c -x -i msg.txt.aes.signed 
+Could not find own personality for EsyHrh9V1K3E/a8H6wy7hkT7Ys/KxlQVmOq8tU+Nbn0=, message not for me
+```
+
+Regarding user management, you can an known public using:
+```
+alice@Kratos:~$ signEd -a 9fb92WtxqOqsDvSiB/Oj2H1anVNF7vE87Wxg672YNDc= bob@Kratos
+```
+This is the citical moment - the question is if the public really belongs to someone you know. Note that the public key does not have to be protected.
+
+You can list all known users you can encrypt for with:
+```
+signed -l
+alice@Kratos
+```
+
+Finally show a shared zecret word with a known user based on ED25519:
+```
+alice@Kratos:~$ signed -z -u bob@Kratos
+5OlvXwI/9KjEz68LVWvMOM9kA1EAVtjQvH0z9bTJbz8=
+```
+When you exchange public keys, both you and the other user will see this same secret key. Even when both public keys are made public, this secret cannot be deducted. A private key is needed.
+
+If you want to mess with the user database, they are stored in ~/snap/signed/common/.signEd when using the snap or ~/.signEd when using the local installation.
+
 
 
 Installation
