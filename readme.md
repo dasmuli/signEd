@@ -99,7 +99,7 @@ Could not find own personality for EsyHrh9V1K3E/a8H6wy7hkT7Ys/KxlQVmOq8tU+Nbn0=,
 
 Regarding user management, you add a known public using:
 ```
-alice@Kratos:~$ signEd -a 9fb92WtxqOqsDvSiB/Oj2H1anVNF7vE87Wxg672YNDc= bob@Kratos
+alice@Kratos:~$ signed -a 9fb92WtxqOqsDvSiB/Oj2H1anVNF7vE87Wxg672YNDc= bob@Kratos
 ```
 This is the citical moment - the question is if the public really belongs to someone you know. Note that the public key does not have to be protected.
 
