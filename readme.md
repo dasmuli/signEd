@@ -13,20 +13,20 @@ Usage
 -----
 
 ```
-signEd                                     - Prints your public key
-signEd -s -i input -o output               - Signs input writing to output
-signEd -c -i input -f signaturefile        - Checks the signature of a file
-signEd -s -m -i input -o output            - Merges input and sig. in one file
-signEd -c -i input                         - Checks signature of a merged file
-signEd -s -m -e -i input -o output -u user - Sign and encrypt into one file
-signEd -c -x -i input -o output            - Check, decrypt and extract
-signEd -z -u user                          - Show the secret key for the user and you
-signEd -n personality                      - Adds a new personality key for you
-signEd -p personality                      - Shows the public key for the personality
-signEd -s -i input -p personality          - Signs with the personality
-signEd -w                                  - Show the list of local personalities
-signEd -a key user                         - Adds a public key for a user to be trusted
-signEd -l                                  - Show the list of trusted users
+signed                                     - Prints your public key
+signed -s -i input -o output               - Signs input writing to output
+signed -c -i input -f signaturefile        - Checks the signature of a file
+signed -s -m -i input -o output            - Merges input and sig. in one file
+signed -c -i input                         - Checks signature of a merged file
+signed -s -m -e -i input -o output -u user - Sign and encrypt into one file
+signed -c -x -i input -o output            - Check, decrypt and extract
+signed -z -u user                          - Show the secret key for the user and you
+signed -n personality                      - Adds a new personality key for you
+signed -p personality                      - Shows the public key for the personality
+signed -s -i input -p personality          - Signs with the personality
+signed -w                                  - Show the list of local personalities
+signed -a key user                         - Adds a public key for a user to be trusted
+signed -l                                  - Show the list of trusted users
 ```
 
 
