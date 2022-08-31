@@ -114,7 +114,7 @@ Finally show a shared zecret word with a known user based on ED25519:
 alice@Kratos:~$ signed -z -u bob@Kratos
 5OlvXwI/9KjEz68LVWvMOM9kA1EAVtjQvH0z9bTJbz8=
 ```
-When you exchange public keys, both you and the other user will see this same secret key. Even when both public keys are made public, this secret cannot be deducted. A private key is needed.
+When you exchange public keys, only you and the other user will see this same secret key, but nobody else. Even if they have both public keys, the zecret stays secret. Sort of magic :)
 
 If you want to mess with the user database, they are stored in ~/snap/signed/common/.signEd when using the snap or ~/.signEd when using the local installation.
 
