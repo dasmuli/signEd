@@ -78,7 +78,7 @@ signed -c -i msg.txt.aes.signed
 File is signed by alice@Kratos
 ```
 
-Checking the signature and encrypting in one step can be done with:
+Checking the signature and decrypting in a single step can be done with:
 ```
 signed -c -x -i msg.txt.aes.signed 
 Hi muli
@@ -97,7 +97,7 @@ signed -c -x -i msg.txt.aes.signed
 Could not find own personality for EsyHrh9V1K3E/a8H6wy7hkT7Ys/KxlQVmOq8tU+Nbn0=, message not for me
 ```
 
-Regarding user management, you add a known public keys using:
+Regarding user management, you add a known public key using:
 ```
 alice@Kratos:~$ signed -a 9fb92WtxqOqsDvSiB/Oj2H1anVNF7vE87Wxg672YNDc= bob@Kratos
 ```
